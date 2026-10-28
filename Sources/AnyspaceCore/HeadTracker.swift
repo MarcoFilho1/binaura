@@ -4,26 +4,26 @@ import Vision
 
 /// Mede quanto a cabeça virou usando a webcam e o framework Vision.
 /// `onYaw` recebe o ângulo bruto em graus (nil quando não há rosto) a cada quadro, em uma fila de fundo.
-final class HeadTracker: NSObject, AVCaptureVideoDataOutputSampleBufferDelegate {
+public final class HeadTracker: NSObject, AVCaptureVideoDataOutputSampleBufferDelegate {
     private let session = AVCaptureSession()
     private let queue = DispatchQueue(label: "anyspace.head")
     private let onYaw: (Float?) -> Void
     private let sign: Float
 
     /// `invert` troca o sentido do ângulo, caso a câmera entregue a imagem espelhada.
-    init(invert: Bool, onYaw: @escaping (Float?) -> Void) {
+    public init(invert: Bool, onYaw: @escaping (Float?) -> Void) {
         self.sign = invert ? -1 : 1
         self.onYaw = onYaw
     }
 
-    static func cameras() -> [AVCaptureDevice] {
+    public static func cameras() -> [AVCaptureDevice] {
         AVCaptureDevice.DiscoverySession(
             deviceTypes: [.builtInWideAngleCamera, .external],
             mediaType: .video, position: .unspecified
         ).devices
     }
 
-    func start(cameraNameContains name: String?, fps: Double = 20, completion: @escaping (String?) -> Void) {
+    public func start(cameraNameContains name: String?, fps: Double = 20, completion: @escaping (String?) -> Void) {
         AVCaptureDevice.requestAccess(for: .video) { granted in
             guard granted else { return completion("permissão de câmera negada (Ajustes > Privacidade > Câmera)") }
             let devices = Self.cameras()
@@ -52,9 +52,9 @@ final class HeadTracker: NSObject, AVCaptureVideoDataOutputSampleBufferDelegate 
         }
     }
 
-    func stop() { session.stopRunning() }
+    public func stop() { session.stopRunning() }
 
-    func captureOutput(_ output: AVCaptureOutput, didOutput sampleBuffer: CMSampleBuffer, from connection: AVCaptureConnection) {
+    public func captureOutput(_ output: AVCaptureOutput, didOutput sampleBuffer: CMSampleBuffer, from connection: AVCaptureConnection) {
         let request = VNDetectFaceRectanglesRequest()
         request.revision = VNDetectFaceRectanglesRequestRevision3
         let handler = VNImageRequestHandler(cmSampleBuffer: sampleBuffer, orientation: .up)

@@ -1,21 +1,22 @@
 import CoreAudio
 import Foundation
+import CoreAudio
 
-func check(_ status: OSStatus, _ what: String) {
+public func check(_ status: OSStatus, _ what: String) {
     guard status == noErr else {
         fputs("erro: \(what) (OSStatus \(status))\n", stderr)
         exit(1)
     }
 }
 
-func address(
+public func address(
     _ selector: AudioObjectPropertySelector,
     scope: AudioObjectPropertyScope = kAudioObjectPropertyScopeGlobal
 ) -> AudioObjectPropertyAddress {
     AudioObjectPropertyAddress(mSelector: selector, mScope: scope, mElement: kAudioObjectPropertyElementMain)
 }
 
-func uint32Property(
+public func uint32Property(
     _ object: AudioObjectID,
     _ selector: AudioObjectPropertySelector,
     scope: AudioObjectPropertyScope = kAudioObjectPropertyScopeGlobal
@@ -27,7 +28,7 @@ func uint32Property(
     return value
 }
 
-func float64Property(_ object: AudioObjectID, _ selector: AudioObjectPropertySelector) -> Float64 {
+public func float64Property(_ object: AudioObjectID, _ selector: AudioObjectPropertySelector) -> Float64 {
     var addr = address(selector)
     var value: Float64 = 0
     var size = UInt32(MemoryLayout<Float64>.size)
@@ -35,7 +36,7 @@ func float64Property(_ object: AudioObjectID, _ selector: AudioObjectPropertySel
     return value
 }
 
-func stringProperty(_ object: AudioObjectID, _ selector: AudioObjectPropertySelector) -> String {
+public func stringProperty(_ object: AudioObjectID, _ selector: AudioObjectPropertySelector) -> String {
     var addr = address(selector)
     var value: CFString? = nil
     var size = UInt32(MemoryLayout<CFString?>.size)
@@ -43,7 +44,7 @@ func stringProperty(_ object: AudioObjectID, _ selector: AudioObjectPropertySele
     return (value as String?) ?? ""
 }
 
-func defaultOutputDevice() -> AudioObjectID {
+public func defaultOutputDevice() -> AudioObjectID {
     var addr = address(kAudioHardwarePropertyDefaultOutputDevice)
     var device = AudioObjectID(kAudioObjectUnknown)
     var size = UInt32(MemoryLayout<AudioObjectID>.size)
@@ -55,7 +56,7 @@ func defaultOutputDevice() -> AudioObjectID {
 }
 
 /// Descreve os buffers de entrada ou saída de um dispositivo (para depuração).
-func streamLayout(_ device: AudioObjectID, scope: AudioObjectPropertyScope) -> [UInt32] {
+public func streamLayout(_ device: AudioObjectID, scope: AudioObjectPropertyScope) -> [UInt32] {
     var addr = address(kAudioDevicePropertyStreamConfiguration, scope: scope)
     var size: UInt32 = 0
     guard AudioObjectGetPropertyDataSize(device, &addr, 0, nil, &size) == noErr, size > 0 else { return [] }
@@ -67,7 +68,7 @@ func streamLayout(_ device: AudioObjectID, scope: AudioObjectPropertyScope) -> [
 }
 
 /// Atraso total (em ms) que o dispositivo declara para um dos lados.
-func latencyMs(_ device: AudioObjectID, scope: AudioObjectPropertyScope) -> Double {
+public func latencyMs(_ device: AudioObjectID, scope: AudioObjectPropertyScope) -> Double {
     let rate = float64Property(device, kAudioDevicePropertyNominalSampleRate)
     guard rate > 0 else { return 0 }
     let frames = uint32Property(device, kAudioDevicePropertyLatency, scope: scope)
@@ -78,7 +79,7 @@ func latencyMs(_ device: AudioObjectID, scope: AudioObjectPropertyScope) -> Doub
 
 /// Objeto de áudio deste processo. Só existe depois que o processo usa áudio,
 /// então abrimos a saída por um instante, em silêncio, para registrá-lo.
-func ownProcessObject(registeringOn output: AudioObjectID) -> AudioObjectID {
+public func ownProcessObject(registeringOn output: AudioObjectID) -> AudioObjectID {
     func lookup() -> AudioObjectID {
         var addr = address(kAudioHardwarePropertyTranslatePIDToProcessObject)
         var pid = getpid()
