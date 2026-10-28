@@ -8,7 +8,7 @@ import Foundation
 //   --width W      abertura do estéreo em graus (padrão 30; 0 = tudo em um ponto só)
 //   --head         liga o rastreio da cabeça pela webcam (o espaço fica parado quando você vira)
 //   --camera NOME  escolhe a câmera pelo nome (ex.: --camera C922); padrão: a do Mac
-//   --invert       inverte o sentido do ângulo da cabeça (se a câmera for espelhada)
+//   --invert       volta ao sentido bruto da câmera (o padrão já é invertido: testado com o Mac e a C922)
 //   --send HOST:PORTA --password SENHA   em vez de tocar, envia o som deste Mac para outro Anyspace pela rede
 //   --seconds N    encerra sozinho e devolve o som ao normal
 //   Para recalibrar o centro da cabeça: pkill -USR1 AnyspaceCLI
@@ -60,7 +60,7 @@ let head = HeadController { session.setHeadYaw(degrees: $0) }
 let headEnabled = CommandLine.arguments.contains("--head")
 if headEnabled {
     print("Câmeras: \(HeadTracker.cameras().map(\.localizedName))")
-    head.start(cameraName: option("--camera"), invert: CommandLine.arguments.contains("--invert")) { error in
+    head.start(cameraName: option("--camera"), invert: !CommandLine.arguments.contains("--invert")) { error in
         if let error { fputs("erro de câmera: \(error)\n", stderr) } else { print("Câmera ligada. Olhe para a tela por 2 s (calibração).") }
     }
 }

@@ -27,7 +27,7 @@ public struct SoundScene: Codable, Equatable {
     public var algorithm = "HRTFHQ"
     public var headTracking = false
     public var cameraName = ""
-    public var invertHead = false
+    public var invertHead = true
     /// Senha dos dispositivos que enviam áudio pela rede (fase 5).
     public var networkPassword = ""
 

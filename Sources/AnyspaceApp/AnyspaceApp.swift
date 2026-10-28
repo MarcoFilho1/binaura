@@ -18,6 +18,10 @@ struct AnyspaceApp: App {
             }
         }
 
+        Window("Câmera (debug)", id: "camera") {
+            CameraDebugView().environmentObject(model)
+        }
+
         MenuBarExtra("Anyspace", systemImage: model.effectOn ? "waveform.circle.fill" : "waveform.circle") {
             Toggle("Efeito espacial", isOn: Binding(get: { model.effectOn }, set: { model.setEffect($0) }))
             Divider()

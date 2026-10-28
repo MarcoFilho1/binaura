@@ -3,6 +3,7 @@ import SwiftUI
 
 struct ControlsView: View {
     @EnvironmentObject var model: AppModel
+    @Environment(\.openWindow) private var openWindow
     @State private var showBlindTest = false
     @State private var networkPort = "5004"
 
@@ -81,10 +82,12 @@ struct ControlsView: View {
                 ForEach(model.cameras, id: \.self) { Text($0).tag($0) }
             }
             Toggle("Inverter o sentido", isOn: $model.scene.invertHead)
+            AngleGauge(raw: model.headRaw, filtered: model.headAngle)
             HStack {
                 Button("Calibrar centro") { model.calibrate() }
-                Text(model.headStatus).font(.caption).foregroundStyle(.secondary)
+                Button("Câmera (debug)") { openWindow(id: "camera") }
             }
+            Text(model.headStatus).font(.caption).foregroundStyle(.secondary)
             Text("Vire para a direita: o som parado à sua frente deve passar para o ouvido esquerdo. Se estiver ao contrário, marque “Inverter”. A câmera só fica ligada enquanto há som tocando.")
                 .font(.caption).foregroundStyle(.secondary)
         }

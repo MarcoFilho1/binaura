@@ -1,3 +1,4 @@
+import AVFoundation
 import CoreAudio
 import Foundation
 
@@ -7,8 +8,10 @@ public final class Session {
     public private(set) var isRunning = false
     public private(set) var lastError: String?
 
-    private let outputDevice: AudioObjectID
-    private let engine: SpatialEngine
+    private var outputDevice: AudioObjectID
+    private var engine: SpatialEngine
+    private var rebuildTask: DispatchWorkItem?
+    private var listenerBlock: AudioObjectPropertyListenerBlock?
     private var rings: [String: (left: MonoRingBuffer, right: MonoRingBuffer)] = [:]
     private var taps: [String: TapCapture] = [:]
     private var receivers: [String: UDPAudioReceiver] = [:]
@@ -23,6 +26,48 @@ public final class Session {
         engine = SpatialEngine(sampleRate: float64Property(outputDevice, kAudioDevicePropertyNominalSampleRate))
         for s in scene.all { installVoice(s.id) }
         applyAll()
+        engine.setOutputKind(speakers: isBuiltInSpeaker(outputDevice))
+        watchOutputChanges()
+        NotificationCenter.default.addObserver(forName: .AVAudioEngineConfigurationChange, object: nil, queue: .main) { [weak self] _ in
+            self?.scheduleRebuild()
+        }
+    }
+
+    // MARK: troca de saída (fone removido ou conectado)
+
+    /// Quando o dispositivo de saída padrão muda, o motor antigo para e os apps ficariam mudos
+    /// (o tap silencia o original). Então desligamos tudo e recomeçamos na nova saída.
+    private func watchOutputChanges() {
+        var addr = address(kAudioHardwarePropertyDefaultOutputDevice)
+        let block: AudioObjectPropertyListenerBlock = { [weak self] _, _ in self?.scheduleRebuild() }
+        listenerBlock = block
+        AudioObjectAddPropertyListenerBlock(AudioObjectID(kAudioObjectSystemObject), &addr, DispatchQueue.main, block)
+    }
+
+    private func scheduleRebuild() {
+        rebuildTask?.cancel()
+        let task = DispatchWorkItem { [weak self] in self?.rebuildIfOutputChanged() }
+        rebuildTask = task
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.6, execute: task)
+    }
+
+    private func rebuildIfOutputChanged() {
+        let current = defaultOutputDevice()
+        // A notificação do motor também chega quando o dispositivo é o mesmo mas parou: reconstrói do mesmo jeito.
+        guard current != outputDevice || (isRunning && !engine.engine.isRunning) else { return }
+        rebuild()
+    }
+
+    public func rebuild() {
+        let wasRunning = isRunning
+        stop()                      // devolve o som aos apps antes de qualquer coisa
+        outputDevice = defaultOutputDevice()
+        engine = SpatialEngine(sampleRate: float64Property(outputDevice, kAudioDevicePropertyNominalSampleRate))
+        rings.removeAll()
+        for s in scene.all { installVoice(s.id) }
+        applyAll()
+        engine.setOutputKind(speakers: isBuiltInSpeaker(outputDevice))
+        if wasRunning { start() }
     }
 
     // MARK: ciclo de vida
