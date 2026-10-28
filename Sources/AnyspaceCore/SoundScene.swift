@@ -28,10 +28,17 @@ public struct SoundScene: Codable, Equatable {
     public var headTracking = false
     public var cameraName = ""
     public var invertHead = false
+    /// Senha dos dispositivos que enviam áudio pela rede (fase 5).
+    public var networkPassword = ""
 
     public init() {}
 
     public var all: [SourceSetting] { [rest] + apps }
+
+    /// Fontes que chegam pela rede têm id "net:PORTA".
+    public static func networkPort(of id: String) -> UInt16? {
+        id.hasPrefix("net:") ? UInt16(id.dropFirst(4)) : nil
+    }
 
     public mutating func update(_ s: SourceSetting) {
         if s.id == Self.restID { rest = s } else if let i = apps.firstIndex(where: { $0.id == s.id }) { apps[i] = s }

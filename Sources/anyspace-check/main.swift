@@ -173,6 +173,49 @@ var starved = [Float](repeating: 5, count: 800)
 starved.withUnsafeMutableBufferPointer { ring.read(into: $0.baseAddress!, count: 800) }
 expect(starved.allSatisfy { $0 == 0 }, "sem áudio suficiente, devolve silêncio")
 
+print("\nÁudio pela rede (loopback)")
+let l0 = (0..<480).map { Float(sin(Double($0) * 0.05)) * 0.5 }, r0 = l0.map { -$0 }
+let packet = AudioPacket.encode(sequence: 7, password: "segredo", left: l0, right: r0)
+let decoded = AudioPacket.decode(packet, password: "segredo")
+expect(decoded?.sequence == 7 && decoded?.left.count == 480, "pacote codifica e decodifica")
+expect(zip(decoded?.left ?? [], l0).allSatisfy { abs($0 - $1) < 0.001 }, "erro de quantização abaixo de 0,001")
+expect(AudioPacket.decode(packet, password: "errada") == nil, "senha errada é rejeitada")
+expect(AudioPacket.decode(packet.dropLast(), password: "segredo") == nil, "pacote truncado é rejeitado")
+
+do {
+    let rxL = MonoRingBuffer(capacityPowerOfTwo: 65536, maxFill: 60000), rxR = MonoRingBuffer(capacityPowerOfTwo: 65536, maxFill: 60000)
+    let receiver = try UDPAudioReceiver(port: 54871, password: "segredo", left: rxL, right: rxR)
+    let ready = DispatchSemaphore(value: 0)
+    receiver.start { ready.signal() }
+    expect(ready.wait(timeout: .now() + 3) == .success, "receptor UDP abre a porta")
+
+    let txL = MonoRingBuffer(), txR = MonoRingBuffer()
+    l0.withUnsafeBufferPointer { txL.write($0.baseAddress!, count: 480) }
+    r0.withUnsafeBufferPointer { txR.write($0.baseAddress!, count: 480) }
+    let sender = UDPAudioSender(host: "127.0.0.1", port: 54871, password: "segredo", left: txL, right: txR)
+    sender.start()
+    Thread.sleep(forTimeInterval: 0.6)
+    sender.stop()
+
+    var got = [Float](repeating: 9, count: 480)
+    got.withUnsafeMutableBufferPointer { rxL.read(into: $0.baseAddress!, count: 480) }
+    expect(zip(got, l0).allSatisfy { abs($0 - $1) < 0.001 }, "áudio enviado chega igual ao receptor (canal esquerdo)")
+    receiver.stop()
+
+    let rejectL = MonoRingBuffer(), rejectR = MonoRingBuffer()
+    let strict = try UDPAudioReceiver(port: 54872, password: "outra", left: rejectL, right: rejectR)
+    let up = DispatchSemaphore(value: 0)
+    strict.start { up.signal() }
+    _ = up.wait(timeout: .now() + 3)
+    l0.withUnsafeBufferPointer { txL.write($0.baseAddress!, count: 480) }
+    let bad = UDPAudioSender(host: "127.0.0.1", port: 54872, password: "segredo", left: txL, right: txR)
+    bad.start()
+    Thread.sleep(forTimeInterval: 0.4)
+    bad.stop()
+    expect(strict.packetsAccepted == 0 && strict.packetsRejected > 0, "receptor ignora remetente com senha errada (\(strict.packetsRejected) rejeitados)")
+    strict.stop()
+} catch { print("erro de rede: \(error)"); failures += 1 }
+
 print("\nFiltro da cabeça")
 let dt: Float = 0.05
 var step = HeadFilter()

@@ -10,6 +10,7 @@ public final class TapCapture {
     }
 
     public let target: Target
+    private let muteOriginal: Bool
     public let left: MonoRingBuffer
     public let right: MonoRingBuffer
     private let outputDevice: AudioObjectID
@@ -22,8 +23,9 @@ public final class TapCapture {
     /// Maior valor absoluto recente, para medidores e para saber se há som tocando.
     public let peak = UnsafeMutablePointer<Float>.allocate(capacity: 1)
 
-    public init(target: Target, outputDevice: AudioObjectID, left: MonoRingBuffer, right: MonoRingBuffer) {
+    public init(target: Target, outputDevice: AudioObjectID, left: MonoRingBuffer, right: MonoRingBuffer, muteOriginal: Bool = true) {
         self.target = target
+        self.muteOriginal = muteOriginal
         self.outputDevice = outputDevice
         self.left = left
         self.right = right
@@ -50,7 +52,7 @@ public final class TapCapture {
         }
         description.name = "Anyspace"
         description.isPrivate = true
-        description.muteBehavior = .muted
+        description.muteBehavior = muteOriginal ? .muted : .unmuted
         var status = AudioHardwareCreateProcessTap(description, &tapID)
         guard status == noErr else { return "criar tap (OSStatus \(status)); permissão de áudio concedida?" }
 

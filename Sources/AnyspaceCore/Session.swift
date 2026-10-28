@@ -11,6 +11,7 @@ public final class Session {
     private let engine: SpatialEngine
     private var rings: [String: (left: MonoRingBuffer, right: MonoRingBuffer)] = [:]
     private var taps: [String: TapCapture] = [:]
+    private var receivers: [String: UDPAudioReceiver] = [:]
     private var testMode = false
 
     public var outputName: String { stringProperty(outputDevice, kAudioObjectPropertyName) }
@@ -34,6 +35,7 @@ public final class Session {
         }
         isRunning = true
         lastError = nil
+        startReceivers()
         refresh()
     }
 
@@ -42,6 +44,8 @@ public final class Session {
         guard isRunning else { return }
         for tap in taps.values { tap.stop() }
         taps.removeAll()
+        for r in receivers.values { r.stop() }
+        receivers.removeAll()
         engine.stop()
         isRunning = false
     }
@@ -51,12 +55,24 @@ public final class Session {
         guard isRunning else { return }
         let apps = Dictionary(uniqueKeysWithValues: listAudioApps().map { ($0.id, $0) })
         var claimed: [AudioObjectID] = []
-        for s in scene.apps {
+        for s in scene.apps where SoundScene.networkPort(of: s.id) == nil {
             let processes = (apps[s.id]?.processes ?? []).sorted()
             claimed += processes
             ensureTap(s.id, processes.isEmpty ? nil : .processes(processes))
         }
         ensureTap(SoundScene.restID, .restOfSystem(excluding: claimed.sorted()))
+    }
+
+    private func startReceivers() {
+        for s in scene.apps {
+            guard let port = SoundScene.networkPort(of: s.id), receivers[s.id] == nil, let ring = rings[s.id] else { continue }
+            guard !scene.networkPassword.isEmpty else { lastError = "Defina uma senha para receber áudio pela rede"; continue }
+            do {
+                let receiver = try UDPAudioReceiver(port: port, password: scene.networkPassword, left: ring.left, right: ring.right)
+                receiver.start()
+                receivers[s.id] = receiver
+            } catch { lastError = "porta \(port): \(error.localizedDescription)" }
+        }
     }
 
     private func ensureTap(_ id: String, _ target: TapCapture.Target?) {
@@ -110,10 +126,12 @@ public final class Session {
         scene = new
         for id in removed {
             taps[id]?.stop(); taps[id] = nil
+            receivers[id]?.stop(); receivers[id] = nil
             engine.removeVoice(id: id); rings[id] = nil
         }
         for id in added { installVoice(id) }
         applyAll()
+        if isRunning { startReceivers() }
         if !removed.isEmpty || !added.isEmpty { refresh() }
     }
 

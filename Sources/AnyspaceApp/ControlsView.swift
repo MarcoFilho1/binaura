@@ -4,6 +4,7 @@ import SwiftUI
 struct ControlsView: View {
     @EnvironmentObject var model: AppModel
     @State private var showBlindTest = false
+    @State private var networkPort = "5004"
 
     var body: some View {
         ScrollView {
@@ -12,6 +13,7 @@ struct ControlsView: View {
                 sourcesSection
                 headSection
                 soundSection
+                networkSection
                 Button("Teste cego: de onde vem o som?") { showBlindTest = true }
                     .disabled(!model.effectOn)
                 if let message = model.message {
@@ -84,6 +86,21 @@ struct ControlsView: View {
                 Text(model.headStatus).font(.caption).foregroundStyle(.secondary)
             }
             Text("Vire para a direita: o som parado à sua frente deve passar para o ouvido esquerdo. Se estiver ao contrário, marque “Inverter”. A câmera só fica ligada enquanto há som tocando.")
+                .font(.caption).foregroundStyle(.secondary)
+        }
+    }
+
+    private var networkSection: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text("Outro dispositivo (rede local)").font(.headline)
+            SecureField("Senha", text: $model.scene.networkPassword)
+            HStack {
+                TextField("Porta", text: $networkPort).frame(width: 70)
+                Button("Receber áudio nessa porta") {
+                    if let port = UInt16(networkPort) { model.addNetworkSource(port: port) }
+                }.disabled(model.scene.networkPassword.isEmpty || UInt16(networkPort) == nil)
+            }
+            Text("No outro Mac: AnyspaceCLI --send IP-DESTE-MAC:PORTA --password SENHA. Sem criptografia: use só em rede de confiança. O macOS pode pedir permissão de rede local.")
                 .font(.caption).foregroundStyle(.secondary)
         }
     }

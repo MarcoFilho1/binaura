@@ -1,5 +1,7 @@
 # Anyspace: plano de desenvolvimento completo (v2, 2026-10-28)
 
+> **Estado (2026-10-28):** fases 0–5 implementadas em branches empilhadas; só as fases 0 e 1 (parcialmente) foram ouvidas por você. O restante aguarda `VALIDACAO.md`. Decisões minhas em `DECISOES.md`.
+
 ## 1. Objetivo
 Fazer o som do Mac parecer vir de lugares fixos no espaço (tela na frente, notebook à esquerda, etc.) usando um fone comum (QCY HT05), e fazer esse espaço "ficar parado" quando você vira a cabeça, medindo a cabeça pela webcam.
 
