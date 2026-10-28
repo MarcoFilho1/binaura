@@ -28,7 +28,7 @@ struct MenuBarPanel: View {
             }
             if model.effectOn {
                 if model.scene.headTracking {
-                    StatusLabel(text: model.headStatus).font(.caption).lineLimit(1)
+                    StatusLabel(status: model.headStatus).font(.caption).lineLimit(1)
                 }
                 if !model.scene.profiles.isEmpty { profiles }
                 sources
@@ -55,14 +55,14 @@ struct MenuBarPanel: View {
     }
 
     private var statusLine: String {
-        model.effectOn ? model.outputName : "Desligado"
+        model.effectOn ? model.outputName : String(localized: "Desligado")
     }
 
     private var profiles: some View {
         VStack(alignment: .leading, spacing: 2) {
             Text("Perfil").font(.caption).foregroundStyle(.secondary)
             ForEach(model.scene.profiles) { profile in
-                MenuRow(title: profile.name, checked: model.activeProfileName == profile.name) {
+                MenuRow(verbatim: profile.name, checked: model.activeProfileName == profile.name) {
                     model.applyProfile(profile.name)
                 }
             }
@@ -76,16 +76,16 @@ struct MenuBarPanel: View {
                 HStack(spacing: Space.s) {
                     SourceIconView(id: source.id, size: 24)
                     VStack(alignment: .leading, spacing: 0) {
-                        Text(source.name).font(.callout).lineLimit(1)
+                        Text(source.displayName).font(.callout).lineLimit(1)
                         Slider(value: Binding(get: { source.volume }, set: { v in model.update(source.id) { $0.volume = v } }), in: 0...1)
                             .controlSize(.small).disabled(source.muted)
-                            .accessibilityLabel("Volume de \(source.name)")
+                            .accessibilityLabel("Volume de \(source.displayName)")
                     }
                     Button { model.update(source.id) { $0.muted.toggle() } } label: {
                         Image(systemName: source.muted ? "speaker.slash.fill" : "speaker.wave.2.fill").frame(width: 18)
                     }
                     .buttonStyle(.borderless)
-                    .accessibilityLabel(source.muted ? "Reativar \(source.name)" : "Silenciar \(source.name)")
+                    .accessibilityLabel(source.muted ? String(localized: "Reativar \(source.displayName)") : String(localized: "Silenciar \(source.displayName)"))
                 }
             }
         }

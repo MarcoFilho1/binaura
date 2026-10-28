@@ -15,12 +15,12 @@ enum Snapshot {
         scene.rest = SourceSetting(id: SoundScene.restID, name: "Resto do sistema", angle: -150, distance: 3, volume: 0.6)
         scene.apps = [
             SourceSetting(id: "com.google.Chrome", name: "Google Chrome", angle: 8, distance: 1.5, volume: 0.9),
-            SourceSetting(id: "com.apple.Music", name: "Música", angle: 62, distance: 2.5, volume: 0.7),
+            SourceSetting(id: "com.apple.Music", name: String(localized: "Música"), angle: 62, distance: 2.5, volume: 0.7),
             SourceSetting(id: "com.apple.Safari", name: "Safari", angle: -58, distance: 2, volume: 0.8, muted: true),
         ]
         scene.headTracking = true
-        scene.saveProfile(named: "Trabalho")
-        scene.saveProfile(named: "Filme")
+        scene.saveProfile(named: String(localized: "Trabalho"))
+        scene.saveProfile(named: String(localized: "Filme"))
         return scene
     }
 
@@ -32,7 +32,7 @@ enum Snapshot {
         let model = AppModel(startEffect: false, preview: sampleScene())
         model.effectOn = true
         model.headAngle = 24
-        model.headStatus = "Acompanhando a cabeça"
+        model.headStatus = .following
         model.levels = ["com.google.Chrome": 0.28, "com.apple.Music": 0.12, SoundScene.restID: 0.05]
         model.availableApps = []
         model.selectedID = "com.google.Chrome"
@@ -116,7 +116,7 @@ enum Snapshot {
         if !live {
             model.effectOn = true
             model.headAngle = 24
-            model.headStatus = "Acompanhando a cabeça"
+            model.headStatus = .following
             model.levels = ["com.google.Chrome": 0.28, "com.apple.Music": 0.12, SoundScene.restID: 0.05]
             model.selectedID = "com.google.Chrome"
             model.cameras = ["MacBook Air Camera", "C922 Pro Stream Webcam"]
@@ -173,13 +173,21 @@ enum Snapshot {
         // --animate: as fontes passeiam pelo palco e a cabeça gira sozinhas (para gravar o GIF principal sem mão humana).
         var ticker: Timer?
         if CommandLine.arguments.contains("--animate"), !live {
+            NSCursor.hide()   // o ponteiro não deve aparecer na gravação
             let start = Date()
-            ticker = Timer.scheduledTimer(withTimeInterval: 1.0 / 30, repeats: true) { _ in
+            ticker = Timer.scheduledTimer(withTimeInterval: 1.0 / 20, repeats: true) { _ in
                 MainActor.assumeIsolated {
                     if !window.isKeyWindow { NSApp.activate(ignoringOtherApps: true); window.makeKey() }   // a gravação rouba o foco
                     let t = Date().timeIntervalSince(start)
-                    model.move("com.google.Chrome", angle: Float(15 + 25 * sin(t * 0.55)), distance: Float(1.7 + 0.55 * sin(t * 0.8 + 1)))
-                    model.move("com.apple.Music", angle: Float(100 + 30 * sin(t * 0.4 + 2)), distance: Float(2.8 + 0.5 * sin(t * 0.6)))
+                    // Uma única atualização da cena por quadro: várias seguidas deixam a interface pesada.
+                    var scene = model.scene
+                    if let i = scene.apps.firstIndex(where: { $0.id == "com.google.Chrome" }) {
+                        scene.apps[i].angle = Float(15 + 25 * sin(t * 0.55)); scene.apps[i].distance = Float(1.7 + 0.55 * sin(t * 0.8 + 1))
+                    }
+                    if let i = scene.apps.firstIndex(where: { $0.id == "com.apple.Music" }) {
+                        scene.apps[i].angle = Float(100 + 30 * sin(t * 0.4 + 2)); scene.apps[i].distance = Float(2.8 + 0.5 * sin(t * 0.6))
+                    }
+                    model.scene = scene
                     model.headAngle = Float(34 * sin(t * 0.45))
                     let pulse = { (phase: Double) in Float(0.05 + 0.25 * abs(sin(t * 3.1 + phase))) }
                     model.levels = ["com.google.Chrome": pulse(0), "com.apple.Music": pulse(1.7), SoundScene.restID: pulse(3.1) * 0.4]

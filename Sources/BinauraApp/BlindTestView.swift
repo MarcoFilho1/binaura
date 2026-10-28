@@ -5,9 +5,9 @@ struct BlindTestView: View {
     @EnvironmentObject var model: AppModel
     @Environment(\.dismiss) private var dismiss
 
-    private let positions: [(name: String, symbol: String, angle: Float)] = [
-        ("Esquerda", "arrow.left", -60), ("Frente", "arrow.up", 0), ("Direita", "arrow.right", 60),
-    ]
+    private var positions: [(name: String, symbol: String, angle: Float)] {
+        [(String(localized: "Esquerda"), "arrow.left", -60), (String(localized: "Frente"), "arrow.up", 0), (String(localized: "Direita"), "arrow.right", 60)]
+    }
     private let totalRounds = 12
 
     @State private var target: Int?
@@ -34,7 +34,7 @@ struct BlindTestView: View {
                 HStack {
                     Spacer()
                     Button { play() } label: {
-                        Label(target == nil ? "Tocar" : "Tocar de novo", systemImage: "play.fill")
+                        Label(LocalizedStringKey(target == nil ? "Tocar" : "Tocar de novo"), systemImage: "play.fill")
                     }
                     .buttonStyle(.borderedProminent).controlSize(.large)
                     Spacer()
@@ -52,7 +52,7 @@ struct BlindTestView: View {
 
             HStack {
                 Spacer()
-                Button(rounds >= totalRounds ? "Concluir" : "Fechar") { model.session.endTest(); dismiss() }
+                Button(LocalizedStringKey(rounds >= totalRounds ? "Concluir" : "Fechar")) { model.session.endTest(); dismiss() }
                     .keyboardShortcut(.cancelAction)
             }
         }
@@ -63,10 +63,10 @@ struct BlindTestView: View {
 
     private var filterName: String {
         switch model.scene.algorithm {
-        case "HRTF": "HRTF"
-        case "sphericalHead": "cabeça esférica"
-        case "equalPowerPanning": "só pan"
-        default: "HRTF alta qualidade"
+        case "HRTF": String(localized: "HRTF")
+        case "sphericalHead": String(localized: "cabeça esférica")
+        case "equalPowerPanning": String(localized: "só pan")
+        default: String(localized: "HRTF (alta qualidade)")
         }
     }
 

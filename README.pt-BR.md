@@ -133,6 +133,7 @@ O Binaura silencia o som original dos apps que ele posiciona, então precisa ter
 
 - **Outro dispositivo como fonte.** Um segundo Mac pode enviar o áudio dele pela sua rede local e aparecer no mapa como mais uma fonte. É uma versão mínima: sem criptografia (uma senha só impede outros dispositivos de entrar), então use em uma rede de confiança.
 - **Abrir ao iniciar o Mac**, e um ícone na barra de menu que avisa quando algo precisa de atenção.
+- **Português e inglês.** A interface acompanha o idioma do seu Mac. Para escolher um, abra **Perfis e avançado → Idioma** e reabra o app.
 - **Modo claro e escuro**, e ele respeita *Reduzir movimento*.
 
 ## Perguntas frequentes
@@ -140,6 +141,8 @@ O Binaura silencia o som original dos apps que ele posiciona, então precisa ter
 **Funciona com qualquer fone?** Sim, qualquer saída. O efeito foi feito para fones: nos alto-falantes do Mac cada ouvido escuta a mistura dos dois alto-falantes, e a maior parte das pistas espaciais se perde.
 
 **Preciso de AirPods?** Não. Os AirPods já têm áudio espacial próprio com rastreio de cabeça; o Binaura é para todos os outros fones. Ele também funciona com AirPods, mas há pouco motivo para usar os dois.
+
+**Em quais idiomas ele fala?** Inglês e português. Ele acompanha o idioma do seu Mac, e você pode trocar em **Perfis e avançado → Idioma** (o app reabre para aplicar). Outros idiomas caem no inglês.
 
 **Instala algum driver de áudio?** Não. Ele usa o *tap* do Core Audio do sistema (macOS 14.2 ou mais novo) para ouvir o que cada app toca, e reproduz o resultado por conta própria.
 

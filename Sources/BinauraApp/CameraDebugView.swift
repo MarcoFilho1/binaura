@@ -15,9 +15,9 @@ struct CameraDebugView: View {
                     FaceOverlay(detail: model.faceDetail)
                     if model.previewSession == nil {
                         VStack(spacing: Space.s) {
-                            if model.headStatus.hasPrefix("Erro") || model.message != nil {
+                            if model.headStatus.isError || model.message != nil {
                                 Image(systemName: "video.slash.fill").font(.title).foregroundStyle(.white.opacity(0.8))
-                                Text(model.message ?? model.headStatus).font(.callout)
+                                Text(model.message ?? model.headStatus.text).font(.callout)
                                     .foregroundStyle(.white.opacity(0.9)).multilineTextAlignment(.center)
                                 if model.permissionIssue == .camera {
                                     Button("Abrir Ajustes…") { NSWorkspace.shared.open(PermissionIssue.camera.settingsURL) }
@@ -63,10 +63,10 @@ struct CameraDebugView: View {
                     ForEach(model.cameras, id: \.self) { Text($0).tag($0) }
                 }
                 Toggle("Inverter o sentido", isOn: $model.scene.invertHead)
-                LabeledContent("Estado") { StatusLabel(text: model.headStatus) }
+                LabeledContent("Estado") { StatusLabel(status: model.headStatus) }
                 Button("Calibrar centro") { model.calibrate() }
             } footer: {
-                Text("Olhe para a tela e clique em “Calibrar centro”. Vire a cabeça para a direita: o ângulo deve ficar positivo e o retângulo verde deve acompanhar o rosto. Esta janela não gira o som; para isso ligue “Acompanhar a cabeça”.")
+                Text("Olhe para a tela e clique em “Calibrar centro”. Vire a cabeça para a direita: o ângulo deve ficar positivo e a rede de pontos deve acompanhar o rosto. Esta janela não gira o som; para isso ligue “Acompanhar a cabeça”.")
             }
         }
         .formStyle(.grouped)
@@ -77,9 +77,11 @@ struct CameraDebugView: View {
 }
 
 private func poseText(yaw: Float, pitch: Float?) -> String {
-    let horizontal = abs(yaw) < 1 ? "centro" : String(format: "%.0f° %@", abs(yaw), yaw > 0 ? "direita" : "esquerda")
+    let h = Int(abs(yaw).rounded())
+    let horizontal = abs(yaw) < 1 ? String(localized: "centro") : (yaw > 0 ? String(localized: "\(h)° direita") : String(localized: "\(h)° esquerda"))
     guard let pitch else { return horizontal }
-    let vertical = abs(pitch) < 1 ? "" : String(format: " · %.0f° %@", abs(pitch), pitch > 0 ? "cima" : "baixo")
+    let v = Int(abs(pitch).rounded())
+    let vertical = abs(pitch) < 1 ? "" : " · " + (pitch > 0 ? String(localized: "\(v)° cima") : String(localized: "\(v)° baixo"))
     return horizontal + vertical
 }
 
@@ -151,12 +153,14 @@ struct AngleGauge: View {
     let raw: Float?
     let filtered: Float
 
+    private static func signed(_ degrees: Float) -> String { String(format: "%+.0f°", degrees) }
+
     var body: some View {
         VStack(spacing: Space.xs) {
             HStack {
-                Text(String(format: "Filtrado %+.0f°", filtered)).monospacedDigit().fontWeight(.semibold)
+                Text("Filtrado \(Self.signed(filtered))").monospacedDigit().fontWeight(.semibold)
                 Spacer()
-                Text(raw.map { String(format: "Bruto da câmera %+.0f°", $0) } ?? "Sem rosto")
+                Text(raw.map { String(localized: "Bruto da câmera \(Self.signed($0))") } ?? String(localized: "Sem rosto"))
                     .monospacedDigit().foregroundStyle(.secondary)
             }
             GeometryReader { geo in
@@ -175,7 +179,7 @@ struct AngleGauge: View {
         }
         .accessibilityElement(children: .ignore)
         .accessibilityLabel("Ângulo da cabeça")
-        .accessibilityValue(String(format: "%@ filtrado", Describe.angle(filtered)))
+        .accessibilityValue(String(localized: "\(Describe.angle(filtered)) filtrado"))
     }
 }
 

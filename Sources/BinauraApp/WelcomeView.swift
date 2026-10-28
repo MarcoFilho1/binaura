@@ -28,7 +28,7 @@ struct WelcomeView: View {
         .frame(width: 460)
     }
 
-    private func step(_ symbol: String, _ title: String, _ detail: String) -> some View {
+    private func step(_ symbol: String, _ title: LocalizedStringKey, _ detail: LocalizedStringKey) -> some View {
         HStack(alignment: .top, spacing: Space.l) {
             Image(systemName: symbol).font(.title2).foregroundStyle(Color.accentColor)
                 .frame(width: 30).accessibilityHidden(true)

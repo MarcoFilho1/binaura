@@ -34,8 +34,10 @@ final class AppModel: ObservableObject {
     @Published var effectOn = false
     @Published var availableApps: [AudioApp] = []
     @Published var headAngle: Float = 0
-    @Published var headStatus = "Rastreio desligado"
-    @Published var message: String?
+    @Published var headStatus: HeadStatus = .off
+    /// Aviso mostrado no palco e no menu. `messageIssue` diz se a solução está nos Ajustes do Sistema.
+    @Published var message: String? { didSet { if message == nil { messageIssue = nil } } }
+    @Published var messageIssue: PermissionIssue?
     @Published var cameras: [String] = []
     @Published var headRaw: Float?
     @Published var faceBox: CGRect?
@@ -93,7 +95,7 @@ final class AppModel: ObservableObject {
             Task { @MainActor in
                 guard let self else { return }
                 self.cameraAccess = HeadTracker.authorization
-                if self.cameraAccess == .authorized, self.message?.hasPrefix("Câmera: permissão") == true { self.message = nil }
+                if self.cameraAccess == .authorized, self.messageIssue == .camera { self.message = nil }
                 self.tick()
             }
         }
@@ -106,14 +108,14 @@ final class AppModel: ObservableObject {
     func setEffect(_ on: Bool) {
         if on {
             session.start()
-            message = session.lastError
+            notify(session.lastError, issue: session.lastErrorNeedsAudioPermission ? .audio : nil)
             effectOn = session.isRunning
         } else {
             head.stop()
             session.stop()
             effectOn = false
             levels = [:]
-            headStatus = "Rastreio desligado"
+            headStatus = .off
         }
     }
 
@@ -132,7 +134,7 @@ final class AppModel: ObservableObject {
         cameras = HeadTracker.cameras().map(\.localizedName)
         if effectOn {
             session.refresh()
-            if let error = session.lastError { message = error }
+            if let error = session.lastError { notify(error, issue: session.lastErrorNeedsAudioPermission ? .audio : nil) }
         }
 
         // Economia de bateria: a câmera só fica ligada quando há som tocando (ou com a janela de debug aberta).
@@ -144,7 +146,7 @@ final class AppModel: ObservableObject {
             // Primeira vez: traz o app para a frente e pede a permissão agora, em vez de esperar o próximo ciclo.
             guard !requestingCamera else { return }
             requestingCamera = true
-            headStatus = "Responda ao pedido de acesso à câmera"
+            headStatus = .waitingForPermission
             NSApp.activate(ignoringOtherApps: true)
             AVCaptureDevice.requestAccess(for: .video) { [weak self] _ in
                 Task { @MainActor in
@@ -155,26 +157,26 @@ final class AppModel: ObservableObject {
             }
         } else if wantCamera && !head.isRunning && (cameraAccess == .denied || cameraAccess == .restricted) {
             // Não adianta tentar de novo: só os Ajustes do Sistema resolvem. Mantém a escolha da pessoa ligada.
-            headStatus = "Erro: permissão da câmera"
+            headStatus = .permissionError
             if message == nil {
-                message = "Câmera: permissão negada. Libere o Binaura em Ajustes do Sistema > Privacidade e Segurança > Câmera."
+                notify(String(localized: "Câmera: permissão negada. Libere o Binaura em Ajustes do Sistema > Privacidade e Segurança > Câmera."), issue: .camera)
             }
         } else if wantCamera && !head.isRunning {
-            headStatus = "Ligando a câmera…"
+            headStatus = .startingCamera
             head.start(cameraName: scene.cameraName, invert: scene.invertHead) { [weak self] error in
                 Task { @MainActor in
                     guard let self else { return }
                     if let error {
-                        self.message = "Câmera: \(error)"
-                        self.headStatus = "Erro: câmera indisponível"
+                        self.notify(String(localized: "Câmera: \(error)"))
+                        self.headStatus = .cameraError
                     } else {
-                        self.headStatus = "Olhe para a tela por 2 s (calibrando)"
+                        self.headStatus = .calibrating
                     }
                 }
             }
         } else if !wantCamera && head.isRunning {
             head.stop()
-            headStatus = scene.headTracking ? "Câmera pausada: sem som tocando" : "Rastreio desligado"
+            headStatus = scene.headTracking ? .pausedNoSound : .off
             headRaw = nil; faceBox = nil; faceDetail = nil
         }
     }
@@ -191,7 +193,7 @@ final class AppModel: ObservableObject {
         faceBox = stats.box
         faceDetail = stats.detail
         if stats.frames > 0 {
-            headStatus = stats.faces == 0 ? "Rosto não encontrado" : "Acompanhando a cabeça"
+            headStatus = stats.faces == 0 ? .noFace : .following
         }
     }
 
@@ -217,11 +219,11 @@ final class AppModel: ObservableObject {
         if scene.cameraName != lastCamera || scene.invertHead != lastInvert {
             lastCamera = scene.cameraName
             lastInvert = scene.invertHead
-            if head.isRunning { head.stop(); headStatus = "Trocando de câmera…" }
+            if head.isRunning { head.stop(); headStatus = .switchingCamera }
             DispatchQueue.main.async { [weak self] in self?.tick() }
         } else if !scene.headTracking && !debugCameraOpen && head.isRunning {
             head.stop()
-            headStatus = "Rastreio desligado"
+            headStatus = .off
         }
         if let selectedID, !scene.all.contains(where: { $0.id == selectedID }) { self.selectedID = SoundScene.restID }
     }
@@ -260,10 +262,10 @@ final class AppModel: ObservableObject {
     func addNetworkSource(port: UInt16) {
         let id = "net:\(port)"
         guard !scene.apps.contains(where: { $0.id == id }) else { return }
-        scene.apps.append(SourceSetting(id: id, name: "Rede \(port)", angle: -80, distance: 1.5))
+        scene.apps.append(SourceSetting(id: id, name: String(localized: "Rede \(Int(port))"), angle: -80, distance: 1.5))
         selectedID = id
         if effectOn { session.start() }
-        message = session.lastError
+        notify(session.lastError, issue: session.lastErrorNeedsAudioPermission ? .audio : nil)
     }
 
     func removeApp(_ id: String) { scene.apps.removeAll { $0.id == id } }
@@ -284,17 +286,17 @@ final class AppModel: ObservableObject {
 
     // MARK: câmera
 
-    func calibrate() { head.calibrate(); headStatus = "Centro recalibrado" }
+    func calibrate() { head.calibrate(); headStatus = .recalibrated }
 
     // MARK: avisos
 
-    /// Quando a mensagem de erro aponta para uma permissão, a interface oferece o atalho para os Ajustes.
-    var permissionIssue: PermissionIssue? {
-        guard let message else { return nil }
-        if message.localizedCaseInsensitiveContains("câmera") && message.localizedCaseInsensitiveContains("permiss") { return .camera }
-        if message.localizedCaseInsensitiveContains("permiss") || message.localizedCaseInsensitiveContains("tap") { return .audio }
-        return nil
+    /// Define o aviso e, se for o caso, a permissão do macOS que resolve o problema (a interface oferece o atalho).
+    func notify(_ text: String?, issue: PermissionIssue? = nil) {
+        message = text
+        messageIssue = text == nil ? nil : issue
     }
+
+    var permissionIssue: PermissionIssue? { messageIssue }
 
     // MARK: abrir no login
 
@@ -305,7 +307,7 @@ final class AppModel: ObservableObject {
             if on { try SMAppService.mainApp.register() } else { try SMAppService.mainApp.unregister() }
             objectWillChange.send()
         } catch {
-            message = "Abrir no login: \(error.localizedDescription)"
+            notify(String(localized: "Abrir no login: \(error.localizedDescription)"))
         }
     }
 }

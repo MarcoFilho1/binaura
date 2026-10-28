@@ -10,6 +10,8 @@ public final class TapCapture {
     }
 
     public let target: Target
+    /// Verdadeiro quando o erro veio da criação do tap, que na prática quase sempre é permissão de áudio negada.
+    public private(set) var failedAtTap = false
     private let muteOriginal: Bool
     public let left: MonoRingBuffer
     public let right: MonoRingBuffer
@@ -57,7 +59,10 @@ public final class TapCapture {
         description.isPrivate = true
         description.muteBehavior = muteOriginal ? .muted : .unmuted
         var status = AudioHardwareCreateProcessTap(description, &tapID)
-        guard status == noErr else { return "criar tap (OSStatus \(status)); permissão de áudio concedida?" }
+        guard status == noErr else {
+            failedAtTap = true
+            return String(localized: "criar tap (OSStatus \(Int(status))); permissão de áudio concedida?")
+        }
 
         let aggregate: [String: Any] = [
             kAudioAggregateDeviceNameKey: "Binaura",

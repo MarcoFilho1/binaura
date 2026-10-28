@@ -32,7 +32,7 @@ struct InspectorView: View {
                         Button { model.selectedID = source.id } label: {
                             HStack(spacing: Space.m) {
                                 SourceIconView(id: source.id, size: 24)
-                                Text(source.name).lineLimit(1)
+                                Text(source.displayName).lineLimit(1)
                                 Spacer()
                             }
                             .contentShape(Rectangle())
@@ -46,8 +46,8 @@ struct InspectorView: View {
                                 .frame(width: 20)
                         }
                         .buttonStyle(.borderless)
-                        .help(source.muted ? "Reativar o som" : "Silenciar")
-                        .accessibilityLabel(source.muted ? "Reativar \(source.name)" : "Silenciar \(source.name)")
+                        .help(LocalizedStringKey(source.muted ? "Reativar o som" : "Silenciar"))
+                        .accessibilityLabel(source.muted ? String(localized: "Reativar \(source.displayName)") : String(localized: "Silenciar \(source.displayName)"))
                     }
                     .padding(.horizontal, Space.s).padding(.vertical, 2)
                     .background(selected ? Color.accentColor.opacity(0.16) : Color.clear, in: RoundedRectangle(cornerRadius: 6, style: .continuous))
@@ -109,7 +109,7 @@ struct InspectorView: View {
                 Button("Remover do mapa", role: .destructive) { model.removeApp(source.id) }
             }
         } header: {
-            Text(source.name)
+            Text(source.displayName)
         } footer: {
             Text("Direção: 0° é à frente, 90° à direita, -90° à esquerda e 180° atrás. Distância de 0,5 a 4 m.")
         }
@@ -121,7 +121,7 @@ struct InspectorView: View {
         Section {
             Toggle("Acompanhar a cabeça", isOn: $model.scene.headTracking)
             if model.scene.headTracking && (model.cameraAccess == .denied || model.cameraAccess == .restricted) {
-                StatusLabel(text: "Erro: permissão da câmera")
+                StatusLabel(status: .permissionError)
                 Button("Abrir Ajustes da câmera…") { NSWorkspace.shared.open(PermissionIssue.camera.settingsURL) }
             }
             if model.scene.headTracking {
@@ -132,7 +132,7 @@ struct InspectorView: View {
                 LabeledContent("Ângulo") {
                     Text(String(format: "%+.0f°", model.headAngle)).monospacedDigit()
                 }
-                LabeledContent("Estado") { StatusLabel(text: model.headStatus) }
+                LabeledContent("Estado") { StatusLabel(status: model.headStatus) }
                 HStack {
                     Button("Calibrar centro") { model.calibrate() }
                     Button("Câmera de debug…") { openWindow(id: "camera") }
@@ -176,7 +176,7 @@ struct InspectorView: View {
         }
     }
 
-    private var filterNote: String {
+    private var filterNote: LocalizedStringKey {
         switch model.scene.algorithm {
         case "HRTF": "Imita a cabeça e as orelhas com menos processamento."
         case "sphericalHead": "Trata a cabeça como uma bola lisa: esquerda e direita bem marcadas, frente e trás menos."
@@ -202,12 +202,41 @@ struct InspectorView: View {
                 .contentShape(Rectangle())
             }
             .buttonStyle(.plain)
-            .accessibilityValue(showAdvanced ? "expandido" : "recolhido")
+            .accessibilityValue(LocalizedStringKey(showAdvanced ? "expandido" : "recolhido"))
             .accessibilityHint("Mostra ou esconde perfis, rede e abrir ao iniciar")
             if showAdvanced {
+                languageBlock
                 profilesBlock
                 networkBlock
                 Toggle("Abrir ao iniciar o Mac", isOn: Binding(get: { model.launchesAtLogin }, set: { model.setLaunchAtLogin($0) }))
+            }
+        }
+    }
+
+    // MARK: idioma
+
+    @State private var language = AppLanguage.current
+    @State private var languageNeedsRelaunch = false
+
+    private var languageBlock: some View {
+        VStack(alignment: .leading, spacing: Space.s) {
+            Text("Idioma").font(.headline)
+            Picker("Idioma", selection: $language) {
+                Text("Automático (sistema)").tag(AppLanguage.system)
+                Text(verbatim: "Português").tag(AppLanguage.pt)
+                Text(verbatim: "English").tag(AppLanguage.en)
+            }
+            .labelsHidden()
+            .onChange(of: language) { _, new in
+                AppLanguage.apply(new)
+                languageNeedsRelaunch = new != AppLanguage.running
+            }
+            if languageNeedsRelaunch {
+                HStack {
+                    Text("Reabra o app para trocar o idioma.").font(.caption).foregroundStyle(.secondary)
+                    Spacer()
+                    Button("Reabrir agora") { AppLanguage.relaunch() }
+                }
             }
         }
     }
