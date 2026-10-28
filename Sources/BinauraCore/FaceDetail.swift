@@ -21,6 +21,10 @@ public struct FaceDetail: Equatable {
     /// Estimativa do olhar (cabeça + posição da pupila no olho). Não é calibrada: serve para comparar, não para medir.
     public var gazeYaw: Float?
     public var gazePitch: Float?
+    /// Yaw do Vision em graus, sem o sinal de "Inverter" e sem nenhum filtro (para diagnóstico).
+    public var rawYawDeg: Float = 0
+    /// Razões geométricas do rosto (posição do nariz entre os contornos etc.), para estimar um yaw contínuo.
+    public var features: [String: Float] = [:]
 
     public init(box: CGRect, yaw: Float, pitch: Float? = nil, roll: Float? = nil, contours: [Contour] = [],
                 pupils: [CGPoint] = [], gazeYaw: Float? = nil, gazePitch: Float? = nil) {

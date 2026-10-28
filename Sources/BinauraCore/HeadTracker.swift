@@ -22,6 +22,9 @@ public final class HeadTracker: NSObject, AVCaptureVideoDataOutputSampleBufferDe
     /// Estado da permissão de câmera, para a interface explicar o problema antes de tentar ligar.
     public static var authorization: AVAuthorizationStatus { AVCaptureDevice.authorizationStatus(for: .video) }
 
+    /// Chamado a cada quadro quando os pontos do rosto estão ligados (nil = sem rosto). Usado no diagnóstico.
+    public var onDetail: ((FaceDetail?) -> Void)?
+
     private let queue = DispatchQueue(label: "binaura.head")
     private let onYaw: (Float?) -> Void
     private let sign: Float
@@ -88,10 +91,12 @@ public final class HeadTracker: NSObject, AVCaptureVideoDataOutputSampleBufferDe
             face = request.results?.max { $0.boundingBox.width < $1.boundingBox.width }
         }
 
+        let detail = wantLandmarks ? face.flatMap { makeDetail($0) } : nil
         boxLock.lock()
         box = face?.boundingBox
-        currentDetail = wantLandmarks ? face.flatMap { makeDetail($0) } : nil
+        currentDetail = detail
         boxLock.unlock()
+        if wantLandmarks { onDetail?(detail) }
         if let yaw = face?.yaw?.floatValue {
             onYaw(sign * yaw * 180 / .pi)
         } else {
@@ -138,7 +143,30 @@ public final class HeadTracker: NSObject, AVCaptureVideoDataOutputSampleBufferDe
             gazeYaw = yaw + (-ox) * 50
             gazePitch = (pitch ?? 0) + oy * 40
         }
-        return FaceDetail(box: box, yaw: yaw, pitch: pitch, roll: roll, contours: contours,
-                          pupils: pupils, gazeYaw: gazeYaw, gazePitch: gazePitch)
+        var detail = FaceDetail(box: box, yaw: yaw, pitch: pitch, roll: roll, contours: contours,
+                                pupils: pupils, gazeYaw: gazeYaw, gazePitch: gazePitch)
+        detail.rawYawDeg = yawRad * 180 / .pi
+        detail.features = geometryFeatures(lm: lm, map: map)
+        return detail
+    }
+
+    /// Razões que variam de forma contínua com a rotação da cabeça, ao contrário do yaw do Vision.
+    private func geometryFeatures(lm: VNFaceLandmarks2D?, map: (VNFaceLandmarkRegion2D?) -> [CGPoint]) -> [String: Float] {
+        let contour = map(lm?.faceContour), crest = map(lm?.noseCrest), median = map(lm?.medianLine)
+        let left = map(lm?.leftEye), right = map(lm?.rightEye)
+        guard let minX = contour.map(\.x).min(), let maxX = contour.map(\.x).max(), maxX > minX,
+              let tip = crest.min(by: { $0.y < $1.y }), !left.isEmpty, !right.isEmpty else { return [:] }
+        let width = maxX - minX, mid = (minX + maxX) / 2
+        func mean(_ pts: [CGPoint]) -> CGFloat { pts.map(\.x).reduce(0, +) / CGFloat(pts.count) }
+        let eyeA = min(mean(left), mean(right)), eyeB = max(mean(left), mean(right))   // esquerda e direita da imagem
+        let dA = abs(tip.x - eyeA), dB = abs(eyeB - tip.x)
+        var f: [String: Float] = [
+            "f_nose": Float((tip.x - mid) / width),
+            "f_eyes": Float(((eyeA + eyeB) / 2 - mid) / width),
+            "f_asym": Float((dA - dB) / max(dA + dB, 0.0001)),
+            "faceW": Float(width),
+        ]
+        if !median.isEmpty { f["f_median"] = Float((mean(median) - mid) / width) }
+        return f
     }
 }

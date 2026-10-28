@@ -20,6 +20,37 @@ func option(_ name: String) -> String? {
     return CommandLine.arguments[i + 1]
 }
 
+if let path = option("--log-yaw") {
+    // Diagnóstico: grava, quadro a quadro, o yaw do Vision e razões geométricas do rosto em um CSV.
+    let seconds = option("--seconds").flatMap(Double.init) ?? 25
+    let lock = NSLock()
+    var rows = ["t,visionYawDeg,pitchDeg,rollDeg,f_nose,f_median,f_eyes,f_asym,faceW,boxW,boxH"]
+    let start = Date()
+    let tracker = HeadTracker(invert: false) { _ in }
+    tracker.onDetail = { detail in
+        let t = String(format: "%.3f", Date().timeIntervalSince(start))
+        lock.lock(); defer { lock.unlock() }
+        guard let d = detail else { rows.append("\(t),,,,,,,,,,"); return }
+        func v(_ x: Float?) -> String { x.map { String(format: "%.5f", $0) } ?? "" }
+        rows.append([t, v(d.rawYawDeg), v(d.pitch), v(d.roll), v(d.features["f_nose"]), v(d.features["f_median"]),
+                     v(d.features["f_eyes"]), v(d.features["f_asym"]), v(d.features["faceW"]),
+                     String(format: "%.4f", d.box.width), String(format: "%.4f", d.box.height)].joined(separator: ","))
+    }
+    tracker.setLandmarks(true)
+    tracker.start(cameraNameContains: option("--camera")) { error in
+        if let error { fputs("erro de câmera: \(error)\n", stderr); exit(1) }
+        print("Gravando por \(Int(seconds)) s. Olhe para a tela e vire a cabeça devagar, como combinado.")
+    }
+    DispatchQueue.main.asyncAfter(deadline: .now() + seconds) {
+        tracker.stop()
+        lock.lock(); let text = rows.joined(separator: "\n"); lock.unlock()
+        try? text.write(toFile: (path as NSString).expandingTildeInPath, atomically: true, encoding: .utf8)
+        print("Gravado em \(path) (\(rows.count - 1) quadros).")
+        exit(0)
+    }
+    RunLoop.main.run()
+}
+
 if let target = option("--send") {
     // Modo remetente: captura o som do sistema (sem silenciá-lo aqui) e manda por UDP.
     let parts = target.split(separator: ":")
