@@ -54,7 +54,7 @@ struct CameraDebugView: View {
             } header: {
                 Text("Para onde você olha")
             } footer: {
-                Text("Estimativa sem calibração: soma a direção da cabeça com a posição da pupila no olho. Serve para comparar, não para medir com precisão. Se a seta vertical estiver ao contrário, me avise.")
+                Text("Estimativa sem calibração: soma a direção da cabeça com a posição da pupila no olho. Serve para comparar, não para medir com precisão.")
             }
 
             Section {

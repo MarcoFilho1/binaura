@@ -3,6 +3,11 @@ import AppKit
 import SwiftUI
 
 /// Gera capturas das telas com dados de exemplo (sem áudio, câmera nem disco) para revisar o visual.
+/// Janela sem borda que aceita foco, para os controles aparecerem ativos (azuis) na captura.
+private final class KeyableWindow: NSWindow {
+    override var canBecomeKey: Bool { true }
+}
+
 @MainActor
 enum Snapshot {
     static func sampleScene() -> SoundScene {
@@ -100,37 +105,95 @@ enum Snapshot {
                           pupils: pupils, gazeYaw: 18, gazePitch: 4)
     }
 
-    /// Abre a janela real com dados de exemplo e a mantém aberta por `seconds`, imprimindo o número dela
-    /// para o `screencapture -l` (a captura do próprio app não pega formulários com rolagem).
+    /// Abre uma janela real do app com dados de exemplo e a mantém aberta por `seconds`, imprimindo o número dela
+    /// para o `screencapture -l`. Nomes: main, menu, welcome, blind, camera (câmera ao vivo, sem áudio).
+    /// A janela aparece na segunda tela, se houver, para não cobrir o trabalho de quem está usando o Mac.
     static func show(name: String, seconds: Double, dark: Bool) {
         let app = NSApplication.shared
         app.setActivationPolicy(.regular)
-        let model = AppModel(startEffect: false, preview: sampleScene())
-        model.effectOn = true
-        model.headAngle = 24
-        model.headStatus = "Acompanhando a cabeça"
-        model.levels = ["com.google.Chrome": 0.28, "com.apple.Music": 0.12, SoundScene.restID: 0.05]
-        model.selectedID = "com.google.Chrome"
-        model.cameras = ["MacBook Air Camera", "C922 Pro Stream Webcam"]
-        model.outputName = "Melobuds MARCO"
-        let root: AnyView
-        var size = NSSize(width: 1080, height: 700)
-        switch name {
-        case "camera": root = AnyView(CameraDebugView().environmentObject(model)); size = NSSize(width: 480, height: 700)
-        case "inspetor": root = AnyView(InspectorView().environmentObject(model)); size = NSSize(width: 360, height: 780)
-        default: root = AnyView(MainWindowView().environmentObject(model))
+        let live = name == "camera"
+        let model = AppModel(startEffect: false, preview: live ? nil : sampleScene())
+        if !live {
+            model.effectOn = true
+            model.headAngle = 24
+            model.headStatus = "Acompanhando a cabeça"
+            model.levels = ["com.google.Chrome": 0.28, "com.apple.Music": 0.12, SoundScene.restID: 0.05]
+            model.selectedID = "com.google.Chrome"
+            model.cameras = ["MacBook Air Camera", "C922 Pro Stream Webcam"]
+            model.outputName = "Melobuds MARCO"
         }
-        let window = NSWindow(contentViewController: NSHostingController(rootView: root))
-        window.styleMask = [.titled, .closable, .resizable, .fullSizeContentView]
-        window.title = "Binaura"
-        window.appearance = NSAppearance(named: dark ? .darkAqua : .aqua)
-        window.setContentSize(size)
-        window.setFrameOrigin(NSPoint(x: 60, y: 60))
+        let appearance = NSAppearance(named: dark ? .darkAqua : .aqua)
+        let screen = NSScreen.screens.dropFirst().first ?? NSScreen.main ?? NSScreen.screens[0]
+        func place(_ window: NSWindow, _ size: NSSize) {
+            window.appearance = appearance
+            window.setContentSize(size)
+            window.setFrameOrigin(NSPoint(x: screen.frame.minX + 80, y: screen.frame.minY + 120))
+        }
+
+        let window: NSWindow
+        switch name {
+        case "menu":
+            // Painel da barra de menu sem a barra de título: borda arredondada e material de popover.
+            let host = NSHostingView(rootView: MenuBarPanel().environmentObject(model))
+            let size = host.fittingSize
+            let w = KeyableWindow(contentRect: NSRect(origin: .zero, size: size), styleMask: [.borderless], backing: .buffered, defer: false)
+            w.isOpaque = false; w.backgroundColor = .clear; w.hasShadow = true
+            let visual = NSVisualEffectView(frame: NSRect(origin: .zero, size: size))
+            visual.material = .popover; visual.state = .active; visual.blendingMode = .behindWindow
+            // Máscara arredondada de verdade (a do popover), para a sombra e os cantos saírem certos.
+            visual.maskImage = NSImage(size: size, flipped: false) { rect in
+                NSColor.black.setFill()
+                NSBezierPath(roundedRect: rect, xRadius: 12, yRadius: 12).fill()
+                return true
+            }
+            host.frame = visual.bounds; host.autoresizingMask = [.width, .height]
+            visual.addSubview(host)
+            w.contentView = visual
+            window = w
+            place(window, size)
+        case "welcome":
+            window = NSWindow(contentViewController: NSHostingController(rootView: WelcomeView {}.environmentObject(model)))
+            window.styleMask = [.titled, .fullSizeContentView]; window.titlebarAppearsTransparent = true
+            window.title = ""; window.titleVisibility = .hidden
+            place(window, NSSize(width: 460, height: 600))
+        case "blind":
+            window = NSWindow(contentViewController: NSHostingController(rootView: BlindTestView().environmentObject(model)))
+            window.styleMask = [.titled, .fullSizeContentView]; window.titlebarAppearsTransparent = true
+            window.title = ""; window.titleVisibility = .hidden
+            place(window, NSSize(width: 460, height: 340))
+        case "camera":
+            window = NSWindow(contentViewController: NSHostingController(rootView: CameraDebugView().environmentObject(model)))
+            window.styleMask = [.titled, .closable, .resizable]; window.title = "Câmera (debug)"
+            place(window, NSSize(width: 480, height: 820))
+        default:
+            window = NSWindow(contentViewController: NSHostingController(rootView: MainWindowView().environmentObject(model)))
+            window.styleMask = [.titled, .closable, .resizable, .fullSizeContentView]; window.title = "Binaura"
+            place(window, NSSize(width: 1080, height: 700))
+        }
+        // --animate: as fontes passeiam pelo palco e a cabeça gira sozinhas (para gravar o GIF principal sem mão humana).
+        var ticker: Timer?
+        if CommandLine.arguments.contains("--animate"), !live {
+            let start = Date()
+            ticker = Timer.scheduledTimer(withTimeInterval: 1.0 / 30, repeats: true) { _ in
+                MainActor.assumeIsolated {
+                    if !window.isKeyWindow { NSApp.activate(ignoringOtherApps: true); window.makeKey() }   // a gravação rouba o foco
+                    let t = Date().timeIntervalSince(start)
+                    model.move("com.google.Chrome", angle: Float(15 + 25 * sin(t * 0.55)), distance: Float(1.7 + 0.55 * sin(t * 0.8 + 1)))
+                    model.move("com.apple.Music", angle: Float(100 + 30 * sin(t * 0.4 + 2)), distance: Float(2.8 + 0.5 * sin(t * 0.6)))
+                    model.headAngle = Float(34 * sin(t * 0.45))
+                    let pulse = { (phase: Double) in Float(0.05 + 0.25 * abs(sin(t * 3.1 + phase))) }
+                    model.levels = ["com.google.Chrome": pulse(0), "com.apple.Music": pulse(1.7), SoundScene.restID: pulse(3.1) * 0.4]
+                }
+            }
+        }
+        _ = ticker
         app.activate(ignoringOtherApps: true)
         window.makeKeyAndOrderFront(nil)
+        window.invalidateShadow()
         print("WINDOW \(window.windowNumber)")
         fflush(stdout)
         RunLoop.main.run(until: Date().addingTimeInterval(seconds))
+        model.shutdown()
         exit(0)
     }
 

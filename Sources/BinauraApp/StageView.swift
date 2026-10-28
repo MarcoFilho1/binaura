@@ -30,7 +30,7 @@ struct StageView: View {
 
                 ForEach(model.scene.all) { source in
                     SourceDisc(source: source, center: center, radius: radius, metersPerRadius: metersPerRadius,
-                               onSelect: { focused = true })
+                               stageFocused: focused, onSelect: { focused = true })
                 }
                 .opacity(model.effectOn ? 1 : 0.5)
             }
@@ -53,13 +53,6 @@ struct StageView: View {
         .focusable()
         .focused($focused)
         .focusEffectDisabled()
-        .overlay {
-            if focused {
-                RoundedRectangle(cornerRadius: 6, style: .continuous)
-                    .strokeBorder(Color.accentColor.opacity(0.6), lineWidth: 2)
-                    .padding(3).allowsHitTesting(false)
-            }
-        }
         .onChange(of: model.stageFocusRequest) { _, _ in focused = true }
         .onKeyPress(.leftArrow) { nudge(angle: -5) }
         .onKeyPress(.rightArrow) { nudge(angle: 5) }
@@ -251,6 +244,7 @@ private struct SourceDisc: View {
     let center: CGPoint
     let radius: CGFloat
     let metersPerRadius: Double
+    var stageFocused = false
     var onSelect: () -> Void = {}
 
     var body: some View {
@@ -275,6 +269,10 @@ private struct SourceDisc: View {
                     .opacity(source.muted ? 0.55 : 1)
                 if selected {
                     Circle().strokeBorder(Color.accentColor, lineWidth: 2.5).frame(width: 52, height: 52)
+                    // Foco do teclado: um segundo aro fino em volta da fonte que as setas vão mover.
+                    if stageFocused {
+                        Circle().strokeBorder(Color.accentColor.opacity(0.45), lineWidth: 1.5).frame(width: 58, height: 58)
+                    }
                 }
                 if source.muted {
                     Image(systemName: "speaker.slash.fill").font(.system(size: 9, weight: .bold)).foregroundStyle(.white)
