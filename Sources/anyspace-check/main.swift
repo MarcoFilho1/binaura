@@ -9,7 +9,7 @@ let frames = 48000 * 2
 
 struct Measurement { let rmsLeft: Double; let rmsRight: Double; let lagSamples: Int }
 
-func render(angle: Float, distance: Float) throws -> Measurement {
+func render(angle: Float, distance: Float, headYaw: Float = 0) throws -> Measurement {
     var seed: UInt64 = 12345
     let engine = SpatialEngine(sampleRate: sampleRate) { out, count in
         for i in 0..<count {
@@ -18,6 +18,7 @@ func render(angle: Float, distance: Float) throws -> Measurement {
         }
     }
     engine.setSource(angleDegrees: angle, distance: distance)
+    engine.setHeadYaw(degrees: headYaw)
     let format = AVAudioFormat(standardFormatWithSampleRate: sampleRate, channels: 2)!
     try engine.engine.enableManualRenderingMode(.offline, format: format, maximumFrameCount: 4096)
     try engine.start()
@@ -51,6 +52,7 @@ func render(angle: Float, distance: Float) throws -> Measurement {
 func db(_ a: Double, _ b: Double) -> Double { 20 * log10(a / b) }
 
 var failures = 0
+
 func expect(_ ok: Bool, _ what: String) {
     print(ok ? "  ok     " : "  FALHOU ", what)
     if !ok { failures += 1 }
@@ -75,10 +77,54 @@ do {
     let drop = db(far.rmsLeft + far.rmsRight, near.rmsLeft + near.rmsRight)
     print(String(format: "Distância 1 m → 4 m: %.1f dB", drop))
     expect(drop < -6, "mais longe fica mais baixo (<-6 dB)")
+
+    // Cabeça: com a fonte à frente, virar para a direita deixa o som no ouvido esquerdo (e vice-versa).
+    let turnedRight = try render(angle: 0, distance: 1, headYaw: 45)
+    let turnedLeft = try render(angle: 0, distance: 1, headYaw: -45)
+    let ildRight = db(turnedRight.rmsRight, turnedRight.rmsLeft), ildLeft = db(turnedLeft.rmsRight, turnedLeft.rmsLeft)
+    print(String(format: "Cabeça virada 45° à direita: D−E %.1f dB | à esquerda: %.1f dB", ildRight, ildLeft))
+    expect(ildRight < -3, "cabeça à direita: fonte da frente passa para a esquerda")
+    expect(ildLeft > 3, "cabeça à esquerda: fonte da frente passa para a direita")
+    let compensated = try render(angle: 45, distance: 1, headYaw: 45)
+    expect(abs(db(compensated.rmsRight, compensated.rmsLeft)) < 1.5, "fonte a 45° + cabeça virada 45°: fonte volta ao centro")
 } catch {
     print("erro: \(error)")
     failures += 1
 }
+
+
+// Filtro da cabeça, com sequências sintéticas a 20 quadros por segundo.
+print("\nFiltro da cabeça")
+let dt: Float = 0.05
+var step = HeadFilter()
+for _ in 0..<10 { step.update(raw: 40, dt: dt) }
+expect(abs(step.output - 40) < 3, "degrau de 40° é alcançado em 0,5 s (saída \(step.output))")
+
+var noisy = HeadFilter()
+var maxDrift: Float = 0
+for i in 0..<200 {
+    noisy.update(raw: (i % 2 == 0 ? 0.8 : -0.8), dt: dt)
+    maxDrift = max(maxDrift, abs(noisy.output))
+}
+expect(maxDrift < 0.5, "ruído de ±0,8° não faz o som tremer (desvio máx \(maxDrift))")
+
+var lost = HeadFilter()
+for _ in 0..<20 { lost.update(raw: 30, dt: dt) }
+let before = lost.output
+for _ in 0..<20 { lost.update(raw: nil, dt: dt) }
+expect(abs(lost.output - before) < 0.01, "rosto perdido por 1 s: mantém o último ângulo")
+for _ in 0..<(20 * 8) { lost.update(raw: nil, dt: dt) }
+expect(abs(lost.output) < 5, "rosto perdido por 9 s: volta ao centro (saída \(lost.output))")
+
+var calibrated = HeadFilter()
+for _ in 0..<40 { calibrated.update(raw: 15, dt: dt) }
+calibrated.calibrate()
+for _ in 0..<40 { calibrated.update(raw: 15, dt: dt) }
+expect(abs(calibrated.output) < 1.5, "depois de calibrar, 15° passa a ser o centro")
+
+var clamped = HeadFilter()
+for _ in 0..<100 { clamped.update(raw: 170, dt: dt) }
+expect(clamped.output <= 90.01, "ângulo limitado a 90°")
 
 print(failures == 0 ? "\nTudo certo." : "\n\(failures) verificação(ões) falharam.")
 exit(failures == 0 ? 0 : 1)
