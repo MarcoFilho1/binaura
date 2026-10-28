@@ -24,17 +24,17 @@ if let path = option("--log-yaw") {
     // Diagnóstico: grava, quadro a quadro, o yaw do Vision e razões geométricas do rosto em um CSV.
     let seconds = option("--seconds").flatMap(Double.init) ?? 25
     let lock = NSLock()
-    var rows = ["t,visionYawDeg,pitchDeg,rollDeg,f_nose,f_median,f_eyes,f_asym,faceW,boxW,boxH"]
+    var rows = ["t,visionYawDeg,pitchDeg,rollDeg,f_nose,f_median,f_eyes,f_asym,faceW,boxW,boxH,estYawDeg"]
     let start = Date()
     let tracker = HeadTracker(invert: false) { _ in }
     tracker.onDetail = { detail in
         let t = String(format: "%.3f", Date().timeIntervalSince(start))
         lock.lock(); defer { lock.unlock() }
-        guard let d = detail else { rows.append("\(t),,,,,,,,,,"); return }
+        guard let d = detail else { rows.append("\(t),,,,,,,,,,,"); return }
         func v(_ x: Float?) -> String { x.map { String(format: "%.5f", $0) } ?? "" }
         rows.append([t, v(d.rawYawDeg), v(d.pitch), v(d.roll), v(d.features["f_nose"]), v(d.features["f_median"]),
                      v(d.features["f_eyes"]), v(d.features["f_asym"]), v(d.features["faceW"]),
-                     String(format: "%.4f", d.box.width), String(format: "%.4f", d.box.height)].joined(separator: ","))
+                     String(format: "%.4f", d.box.width), String(format: "%.4f", d.box.height), v(d.yaw)].joined(separator: ","))
     }
     tracker.setLandmarks(true)
     tracker.start(cameraNameContains: option("--camera")) { error in

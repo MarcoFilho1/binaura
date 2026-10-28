@@ -77,37 +77,26 @@ public final class HeadTracker: NSObject, AVCaptureVideoDataOutputSampleBufferDe
         boxLock.lock(); let wantLandmarks = landmarks; boxLock.unlock()
         let handler = VNImageRequestHandler(cmSampleBuffer: sampleBuffer, orientation: .up)
 
-        let face: VNFaceObservation?
-        if wantLandmarks {
-            let request = VNDetectFaceLandmarksRequest()
-            request.revision = VNDetectFaceLandmarksRequestRevision3
-            try? handler.perform([request])
-            // Com vários rostos, usa o maior (o mais perto da câmera).
-            face = request.results?.max { $0.boundingBox.width < $1.boundingBox.width }
-        } else {
-            let request = VNDetectFaceRectanglesRequest()
-            request.revision = VNDetectFaceRectanglesRequestRevision3
-            try? handler.perform([request])
-            face = request.results?.max { $0.boundingBox.width < $1.boundingBox.width }
-        }
+        // Sempre com pontos do rosto: o yaw do Vision só tem 3 valores (0°, ±45°, ±90°) e causa "pulos".
+        // O ângulo usado no som vem da geometria dos pontos (ver YawEstimator).
+        let request = VNDetectFaceLandmarksRequest()
+        request.revision = VNDetectFaceLandmarksRequestRevision3
+        try? handler.perform([request])
+        // Com vários rostos, usa o maior (o mais perto da câmera).
+        let face = request.results?.max { $0.boundingBox.width < $1.boundingBox.width }
 
-        let detail = wantLandmarks ? face.flatMap { makeDetail($0) } : nil
+        let detail = face.flatMap { makeDetail($0) }
         boxLock.lock()
         box = face?.boundingBox
-        currentDetail = detail
+        currentDetail = wantLandmarks ? detail : nil   // contornos só para a janela de depuração
         boxLock.unlock()
         if wantLandmarks { onDetail?(detail) }
-        if let yaw = face?.yaw?.floatValue {
-            onYaw(sign * yaw * 180 / .pi)
-        } else {
-            onYaw(nil)
-        }
+        onYaw(detail?.yaw)
     }
 
     private func makeDetail(_ face: VNFaceObservation) -> FaceDetail? {
         guard let yawRad = face.yaw?.floatValue else { return nil }
         let box = face.boundingBox
-        let yaw = sign * yawRad * 180 / .pi
         let pitch = face.pitch.map { $0.floatValue * 180 / .pi }
         let roll = face.roll.map { $0.floatValue * 180 / .pi }
 
@@ -135,18 +124,22 @@ public final class HeadTracker: NSObject, AVCaptureVideoDataOutputSampleBufferDe
             return (Float((pupil.x - (xs.max()! + xs.min()!) / 2) / width), Float((pupil.y - (ys.max()! + ys.min()!) / 2) / height))
         }
         let offsets = [offset(eye: map(lm?.leftEye), pupil: leftPupil), offset(eye: map(lm?.rightEye), pupil: rightPupil)].compactMap { $0 }
-        var gazeYaw: Float?, gazePitch: Float?
+        var eyeYaw: Float?, eyePitch: Float?   // só a parte do olho (pupila dentro do olho), em graus
         if !offsets.isEmpty {
             let ox = offsets.map(\.x).reduce(0, +) / Float(offsets.count)
             let oy = offsets.map(\.y).reduce(0, +) / Float(offsets.count)
             // Na imagem da câmera (sem espelho) olhar para a direita da pessoa move a pupila para a esquerda da imagem.
-            gazeYaw = yaw + (-ox) * 50
-            gazePitch = (pitch ?? 0) + oy * 40
+            eyeYaw = (-ox) * 50
+            eyePitch = oy * 40
         }
+        let features = geometryFeatures(lm: lm, map: map)
+        let visionYaw = yawRad * 180 / .pi
+        let yaw = sign * estimateYaw(fMedian: features["f_median"], fEyes: features["f_eyes"], fallbackDegrees: visionYaw)
         var detail = FaceDetail(box: box, yaw: yaw, pitch: pitch, roll: roll, contours: contours,
-                                pupils: pupils, gazeYaw: gazeYaw, gazePitch: gazePitch)
-        detail.rawYawDeg = yawRad * 180 / .pi
-        detail.features = geometryFeatures(lm: lm, map: map)
+                                pupils: pupils, gazeYaw: nil, gazePitch: nil)
+        if let eyeYaw, let eyePitch { detail.gazeYaw = yaw + eyeYaw; detail.gazePitch = (pitch ?? 0) + eyePitch }
+        detail.rawYawDeg = visionYaw
+        detail.features = features
         return detail
     }
 

@@ -7,7 +7,7 @@ import Foundation
 ///  - rosto perdido: mantém o último ângulo por `holdSeconds` e volta devagar ao centro
 ///  - `calibrate()` define o centro como a última medição
 public struct HeadFilter {
-    public var tau: Float = 0.08
+    public var tau: Float = 0.10
     public var deadZone: Float = 1.0
     public var holdSeconds: Float = 1.5
     public var returnTau: Float = 1.5

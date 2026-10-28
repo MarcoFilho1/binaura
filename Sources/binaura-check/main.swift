@@ -257,6 +257,22 @@ do {
     expect(SoundScene().invertHead, "sentido da cabeça padrão é o invertido")
 }
 
+print("\nYaw contínuo (YawEstimator)")
+expect(abs(estimateYaw(fMedian: 0, fEyes: 0, fallbackDegrees: 99)) < 0.01, "rosto de frente = 0°")
+expect(estimateYaw(fMedian: nil, fEyes: nil, fallbackDegrees: 45) == 45, "sem pontos usa o yaw do Vision")
+let mid = estimateYaw(fMedian: -0.333, fEyes: -0.223, fallbackDegrees: 0)
+expect(mid < -38 && mid > -48, "valores medidos na faixa -45° do Vision dão ≈ -43° (deu \(mid))")
+var previous: Float = -100, monotonic = true, steps = 0
+for i in 0...90 {
+    let f = -Float(i) / 100 * 0.5
+    let e = estimateYaw(fMedian: f, fEyes: f * 0.68, fallbackDegrees: 0)
+    if e > previous + 0.0001 && previous != -100 { monotonic = false }
+    previous = e; steps += 1
+}
+expect(monotonic && steps == 91, "ângulo cresce de forma contínua e monótona com o deslocamento do rosto")
+expect(abs(estimateYaw(fMedian: 0.2, fEyes: 0.136, fallbackDegrees: 0) + estimateYaw(fMedian: -0.2, fEyes: -0.136, fallbackDegrees: 0)) < 0.01, "simétrico entre esquerda e direita")
+expect(abs(estimateYaw(fMedian: -5, fEyes: -5, fallbackDegrees: 0)) < 80, "valores absurdos ficam limitados")
+
 print("\nOlhar na tela")
 expect(screenPoint(gazeYaw: 0, gazePitch: 0) == (0, 0), "olhar à frente = centro da tela")
 expect(screenPoint(gazeYaw: 15, gazePitch: 0).x == 0.5 && screenPoint(gazeYaw: -15, gazePitch: 0).x == -0.5, "15° à direita = meio caminho para a direita")
