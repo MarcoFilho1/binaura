@@ -3,8 +3,10 @@ import PackageDescription
 
 let package = Package(
     name: "anyspace",
-    platforms: [.macOS("14.2")],
+    platforms: [.macOS("15.0")],
     targets: [
-        .executableTarget(name: "anyspace", path: "Sources/anyspace")
+        .target(name: "AnyspaceCore", path: "Sources/AnyspaceCore"),
+        .executableTarget(name: "anyspace", dependencies: ["AnyspaceCore"], path: "Sources/anyspace"),
+        .executableTarget(name: "anyspace-check", dependencies: ["AnyspaceCore"], path: "Sources/anyspace-check"),
     ]
 )
