@@ -39,6 +39,12 @@ struct MapView: View {
                     .font(.caption.monospacedDigit()).foregroundStyle(.secondary)
                     .position(x: center.x, y: center.y + 26)
 
+                // Abertura do estéreo: onde ficam os alto-falantes virtuais (E e D) de cada fonte.
+                ForEach(model.scene.all) { source in
+                    StereoSpread(source: source, width: model.scene.width,
+                                 center: center, radius: radius, metersPerRadius: metersPerRadius)
+                }
+
                 ForEach(model.scene.all) { source in
                     SourceDot(source: source,
                               center: center, radius: radius, metersPerRadius: metersPerRadius)
@@ -92,5 +98,38 @@ private struct ViewCone: Shape {
         p.addArc(center: c, radius: rect.width / 2, startAngle: .degrees(-125), endAngle: .degrees(-55), clockwise: false)
         p.closeSubpath()
         return p
+    }
+}
+
+private struct StereoSpread: View {
+    let source: SourceSetting
+    let width: Float
+    let center: CGPoint
+    let radius: CGFloat
+    let metersPerRadius: Double
+
+    var body: some View {
+        let l = MapGeometry.point(angle: source.angle - width, distance: source.distance,
+                                  metersPerRadius: metersPerRadius, radiusPixels: Double(radius))
+        let r = MapGeometry.point(angle: source.angle + width, distance: source.distance,
+                                  metersPerRadius: metersPerRadius, radiusPixels: Double(radius))
+        let pl = CGPoint(x: center.x + l.dx, y: center.y + l.dy + 8)
+        let pr = CGPoint(x: center.x + r.dx, y: center.y + r.dy + 8)
+        let tint: Color = source.muted ? .gray : (source.id == SoundScene.restID ? .orange : .green)
+        ZStack {
+            Path { p in p.move(to: pl); p.addLine(to: pr) }
+                .stroke(tint.opacity(0.5), style: StrokeStyle(lineWidth: 1, dash: [3, 3]))
+            speaker("E", at: pl, tint: tint)
+            speaker("D", at: pr, tint: tint)
+        }
+        .allowsHitTesting(false)
+    }
+
+    private func speaker(_ letter: String, at point: CGPoint, tint: Color) -> some View {
+        ZStack {
+            Circle().fill(tint.opacity(0.35)).frame(width: 16, height: 16)
+            Text(letter).font(.system(size: 9, weight: .bold)).foregroundStyle(tint)
+        }
+        .position(point)
     }
 }
