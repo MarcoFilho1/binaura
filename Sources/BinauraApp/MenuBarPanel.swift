@@ -1,0 +1,108 @@
+import BinauraCore
+import AppKit
+import SwiftUI
+
+/// Painel da barra de menu: o uso do dia a dia. Liga e desliga, troca de perfil e ajusta o volume de cada fonte.
+struct MenuBarPanel: View {
+    @EnvironmentObject var model: AppModel
+    @Environment(\.openWindow) private var openWindow
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: Space.m) {
+            header
+            if let message = model.message {
+                VStack(alignment: .leading, spacing: Space.s) {
+                    Label {
+                        Text(message).foregroundStyle(.primary)
+                    } icon: {
+                        Image(systemName: "exclamationmark.triangle.fill").foregroundStyle(.orange)
+                    }
+                    .font(.callout).fixedSize(horizontal: false, vertical: true)
+                    HStack {
+                        if let issue = model.permissionIssue {
+                            Button("Abrir Ajustes…") { NSWorkspace.shared.open(issue.settingsURL) }
+                        }
+                        Button("Dispensar") { model.message = nil }
+                    }
+                }
+            }
+            if model.effectOn {
+                if model.scene.headTracking {
+                    StatusLabel(text: model.headStatus).font(.caption).lineLimit(1)
+                }
+                if !model.scene.profiles.isEmpty { profiles }
+                sources
+            } else {
+                Text("O som do Mac sai normalmente.").font(.callout).foregroundStyle(.secondary)
+            }
+            Divider()
+            footer
+        }
+        .padding(Space.l)
+        .frame(width: 300)
+    }
+
+    private var header: some View {
+        HStack(spacing: Space.m) {
+            VStack(alignment: .leading, spacing: 2) {
+                Text("Binaura").font(.headline)
+                Text(statusLine).font(.caption).foregroundStyle(.secondary).lineLimit(1)
+            }
+            Spacer()
+            Toggle("Efeito espacial", isOn: Binding(get: { model.effectOn }, set: { model.setEffect($0) }))
+                .toggleStyle(.switch).labelsHidden()
+        }
+    }
+
+    private var statusLine: String {
+        model.effectOn ? model.outputName : "Desligado"
+    }
+
+    private var profiles: some View {
+        VStack(alignment: .leading, spacing: 2) {
+            Text("Perfil").font(.caption).foregroundStyle(.secondary)
+            ForEach(model.scene.profiles) { profile in
+                MenuRow(title: profile.name, checked: model.activeProfileName == profile.name) {
+                    model.applyProfile(profile.name)
+                }
+            }
+        }
+    }
+
+    private var sources: some View {
+        VStack(alignment: .leading, spacing: Space.m) {
+            Text("Volume").font(.caption).foregroundStyle(.secondary)
+            ForEach(model.scene.all) { source in
+                HStack(spacing: Space.s) {
+                    SourceIconView(id: source.id, size: 24)
+                    VStack(alignment: .leading, spacing: 0) {
+                        Text(source.name).font(.callout).lineLimit(1)
+                        Slider(value: Binding(get: { source.volume }, set: { v in model.update(source.id) { $0.volume = v } }), in: 0...1)
+                            .controlSize(.small).disabled(source.muted)
+                            .accessibilityLabel("Volume de \(source.name)")
+                    }
+                    Button { model.update(source.id) { $0.muted.toggle() } } label: {
+                        Image(systemName: source.muted ? "speaker.slash.fill" : "speaker.wave.2.fill").frame(width: 18)
+                    }
+                    .buttonStyle(.borderless)
+                    .accessibilityLabel(source.muted ? "Reativar \(source.name)" : "Silenciar \(source.name)")
+                }
+            }
+        }
+    }
+
+    private var footer: some View {
+        VStack(alignment: .leading, spacing: 0) {
+            MenuRow(title: "Abrir Binaura…", shortcut: "⌘O") {
+                openWindow(id: "main")
+                NSApplication.shared.activate(ignoringOtherApps: true)
+            }
+            .keyboardShortcut("o")
+            MenuRow(title: "Sair do Binaura", shortcut: "⌘Q") {
+                model.shutdown()
+                NSApplication.shared.terminate(nil)
+            }
+            .keyboardShortcut("q")
+        }
+    }
+}

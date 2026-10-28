@@ -1,0 +1,125 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-10-28T00:00:00Z",
+  "title": "Design System: Binaura",
+  "extensions": {
+    "platform": "macos-swiftui",
+    "note": "Tokens are SwiftUI/AppKit semantic values; hex values are approximations of system colors in default light appearance. Snippets below are web approximations for panel preview only.",
+    "colorMeta": {
+      "accent-user": { "role": "primary", "displayName": "Acento do usuário", "canonical": "Color.accentColor (default #007AFF)", "tonalRamp": ["#002B66", "#0040A0", "#0058D6", "#007AFF", "#4D9DFF", "#80BAFF", "#B3D7FF", "#E0EEFF"] },
+      "window-background": { "role": "neutral", "displayName": "Fundo da janela", "canonical": "NSColor.windowBackgroundColor", "tonalRamp": ["#1E1E1E", "#323232", "#505050", "#8A8A8A", "#B8B8B8", "#D4D4D4", "#ECECEC", "#F7F7F7"] },
+      "state-ok": { "role": "state", "displayName": "Verde de estado", "canonical": "Color.green", "tonalRamp": ["#0F3D1B", "#1B6B30", "#259A45", "#34C759", "#66D683", "#8FE0A5", "#BDEDCB", "#E4F8EA"] },
+      "state-attention": { "role": "state", "displayName": "Laranja de estado", "canonical": "Color.orange", "tonalRamp": ["#4D2E00", "#804D00", "#B36B00", "#FF9500", "#FFAD33", "#FFC266", "#FFDB99", "#FFF1DB"] },
+      "state-error": { "role": "state", "displayName": "Vermelho de estado", "canonical": "Color.red", "tonalRamp": ["#5C0F0A", "#8F1A12", "#C42A20", "#FF3B30", "#FF6B63", "#FF9A94", "#FFC4C0", "#FFE8E6"] }
+    },
+    "typographyMeta": {
+      "title": { "displayName": "Title", "purpose": "Título de folha (boas-vindas, teste cego)." },
+      "headline": { "displayName": "Headline", "purpose": "Título de bloco: faixa desligada, passos, nome no painel." },
+      "body": { "displayName": "Body", "purpose": "Texto corrente do inspetor e folhas." },
+      "callout": { "displayName": "Callout", "purpose": "Descrições, avisos, legendas secundárias." },
+      "label": { "displayName": "Label", "purpose": "Rótulos do palco, 11 pt fixo, tabulares em números." }
+    },
+    "shadows": [
+      { "name": "source-disc", "value": "black 22%, radius 6, y 2", "purpose": "Disco de fonte flutuando sobre o palco." },
+      { "name": "head-marker", "value": "black 18%, radius 3, y 1", "purpose": "Marcador da cabeça." },
+      { "name": "off-strip", "value": "black 10%, radius 10, y 3", "purpose": "Faixa de efeito desligado." },
+      { "name": "regular-material", "value": ".regularMaterial + .separator stroke", "purpose": "Avisos, faixa desligada, cápsulas e etiquetas sobre o palco." }
+    ],
+    "motion": [
+      { "name": "level-ring", "value": ".easeOut(0.12s); scale 1 + level*0.25; opacity = level", "purpose": "Nível de áudio; com reduzir movimento só opacidade, sem animação." },
+      { "name": "head-rotation", "value": ".smooth(0.12s)", "purpose": "Giro do marcador da cabeça; desligado com reduzir movimento." }
+    ],
+    "breakpoints": [
+      { "name": "window-min", "value": "860x560 pt" },
+      { "name": "window-default", "value": "1080x700 pt" },
+      { "name": "inspector", "value": "min 300 / ideal 340 / max 440 pt" },
+      { "name": "menu-bar-panel", "value": "300 pt" },
+      { "name": "sheet", "value": "460 pt" }
+    ]
+  },
+  "components": [
+    {
+      "name": "Disco de fonte",
+      "kind": "custom",
+      "refersTo": "source-disc",
+      "description": "Ícone real do app em disco com sombra suave; selecionado ganha anel de acento e etiqueta.",
+      "html": "<div class=\"ds-disc\"><div class=\"ds-disc-icon\"></div></div><span class=\"ds-disc-label\">Música</span>",
+      "css": ".ds-disc{width:48px;height:48px;border-radius:50%;background:#fff;box-shadow:0 2px 6px rgba(0,0,0,.22);display:flex;align-items:center;justify-content:center;outline:2.5px solid #007AFF;outline-offset:2px}.ds-disc-icon{width:36px;height:36px;border-radius:9px;background:#d4d4d4}.ds-disc-label{display:inline-block;margin-top:4px;padding:2px 8px;border-radius:999px;background:rgba(0,122,255,.9);color:#fff;font:600 11px -apple-system,system-ui,sans-serif}"
+    },
+    {
+      "name": "Faixa desligado",
+      "kind": "card",
+      "refersTo": "off-strip",
+      "description": "Material arredondado na base do palco com estado e ação primária.",
+      "html": "<div class=\"ds-off\"><div><strong>Efeito desligado</strong><p>O som do Mac sai normalmente pelo fone.</p></div><button class=\"ds-off-btn\">Ligar efeito espacial</button></div>",
+      "css": ".ds-off{display:flex;gap:16px;align-items:center;justify-content:space-between;padding:16px;max-width:560px;border-radius:14px;background:rgba(246,246,246,.85);backdrop-filter:blur(20px);border:1px solid rgba(0,0,0,.1);box-shadow:0 3px 10px rgba(0,0,0,.1);font:13px -apple-system,system-ui,sans-serif}.ds-off p{margin:2px 0 0;font-size:12px;color:#6b6b6b}.ds-off-btn{background:#007AFF;color:#fff;border:0;border-radius:7px;padding:6px 14px;font:13px -apple-system,system-ui,sans-serif}.ds-off-btn:hover{background:#0A84FF}.ds-off-btn:focus-visible{outline:3px solid rgba(0,122,255,.5);outline-offset:2px}"
+    },
+    {
+      "name": "Aviso",
+      "kind": "card",
+      "refersTo": "notice",
+      "description": "Material com raio 10, triângulo laranja, texto e dispensar.",
+      "html": "<div class=\"ds-notice\"><span class=\"ds-notice-icon\">&#9888;</span><span>Permissão de captura de áudio negada.</span><button class=\"ds-notice-btn\">Abrir Ajustes…</button></div>",
+      "css": ".ds-notice{display:flex;gap:12px;align-items:center;padding:12px;border-radius:10px;background:rgba(246,246,246,.85);border:1px solid rgba(0,0,0,.1);font:12px -apple-system,system-ui,sans-serif;max-width:560px}.ds-notice-icon{color:#FF9500}.ds-notice-btn{border:1px solid rgba(0,0,0,.15);background:#fff;border-radius:6px;padding:3px 10px;font:12px -apple-system,system-ui,sans-serif}.ds-notice-btn:hover{background:#f0f0f0}.ds-notice-btn:focus-visible{outline:3px solid rgba(0,122,255,.5)}"
+    },
+    {
+      "name": "StatusLabel",
+      "kind": "chip",
+      "refersTo": "state-ok",
+      "description": "Símbolo colorido de estado mais texto secundário; nunca só cor.",
+      "html": "<span class=\"ds-status\"><span class=\"ds-status-dot\">&#10003;</span>Acompanhando o rosto</span>",
+      "css": ".ds-status{display:inline-flex;gap:6px;align-items:center;color:#6b6b6b;font:12px -apple-system,system-ui,sans-serif}.ds-status-dot{color:#34C759;font-weight:700}"
+    },
+    {
+      "name": "MenuRow",
+      "kind": "nav",
+      "refersTo": "menu-row",
+      "description": "Linha de menu com hover e foco de teclado em acento a 18%.",
+      "html": "<div class=\"ds-menurow\" tabindex=\"0\"><span>Abrir Binaura…</span><span class=\"ds-menurow-key\">⌘O</span></div>",
+      "css": ".ds-menurow{display:flex;justify-content:space-between;padding:4px 8px;border-radius:6px;font:13px -apple-system,system-ui,sans-serif;width:268px}.ds-menurow-key{color:#6b6b6b}.ds-menurow:hover,.ds-menurow:focus-visible{background:rgba(0,122,255,.18);outline:none}"
+    },
+    {
+      "name": "Campo numérico do inspetor",
+      "kind": "input",
+      "refersTo": "body",
+      "description": "Campo de 52 pt alinhado à direita com unidade; alternativa por teclado ao arrasto do mapa.",
+      "html": "<label class=\"ds-field\">Direção <input class=\"ds-field-input\" value=\"30\"><span>°</span></label>",
+      "css": ".ds-field{display:flex;gap:4px;align-items:center;font:13px -apple-system,system-ui,sans-serif}.ds-field-input{width:52px;text-align:right;border:1px solid rgba(0,0,0,.15);border-radius:5px;padding:2px 6px;font:13px -apple-system,system-ui,sans-serif;font-variant-numeric:tabular-nums}.ds-field-input:focus-visible{outline:3px solid rgba(0,122,255,.5);border-color:#007AFF}"
+    }
+  ],
+  "narrative": {
+    "northStar": "A mesa de som nativa",
+    "overview": "O palco (mapa visto de cima) é o protagonista; tudo ao redor usa o vocabulário padrão do macOS: toolbar unificada, inspetor em Form agrupado, popover da barra de menu em estilo janela, folhas e alertas do sistema. A construção segue a direção: aparência premium porque é fiel ao sistema, não porque tem identidade própria. Densidade média, calma: poucos controles por vez, estados explicados em texto e símbolo.",
+    "keyCharacteristics": [
+      "Fontes do sistema (SF), sem fonte própria.",
+      "Neutros do sistema; a cor de destaque do usuário só marca seleção, ação primária e nível.",
+      "Verde, laranja e vermelho só para estado, sempre com símbolo.",
+      "Cada fonte de som é o ícone real do app dentro de um disco com sombra suave.",
+      "Profundidade por materiais (.regularMaterial) e sombras difusas, nunca bordas pesadas."
+    ],
+    "rules": [
+      { "name": "The Borrowed Accent Rule", "body": "O acento é da pessoa. Nada usa um hex de marca; tudo referencia accentColor ou um estilo semântico.", "section": "colors" },
+      { "name": "The Signal Only Rule", "body": "Verde, laranja e vermelho nunca decoram; aparecem apenas junto de um símbolo que diz o estado (StatusLabel, aviso).", "section": "colors" },
+      { "name": "The System Type Rule", "body": "Preferir estilos semânticos (.headline, .callout, .caption); tamanho fixo só dentro do palco, onde o texto acompanha geometria desenhada.", "section": "typography" },
+      { "name": "The Tabular Rule", "body": "Todo número que muda ao vivo usa .monospacedDigit().", "section": "typography" },
+      { "name": "The Fixed Floor Rule", "body": "A faixa inferior do palco tem altura reservada; estado novo nunca desloca o mapa.", "section": "layout" },
+      { "name": "The Float Only Rule", "body": "Sombra só em objetos que se movem ou sobrepõem o palco; linhas do mapa e linhas de lista ficam planas.", "section": "elevation" }
+    ],
+    "dos": [
+      "Do usar controles padrão do macOS e estilos semânticos de cor e texto; manter claro e escuro automáticos.",
+      "Do usar o acento do usuário apenas para seleção, ação primária e nível.",
+      "Do mostrar cada estado com símbolo mais texto (StatusLabel), e dar alternativa por teclado e por campos numéricos a todo gesto de arrasto.",
+      "Do usar o ícone real do app como identidade de uma fonte, com SF Symbol de substituição.",
+      "Do respeitar accessibilityReduceMotion em qualquer animação nova.",
+      "Do espaçar com Space (4/8/12/16/24)."
+    ],
+    "donts": [
+      "Don't fixar hex de marca nem uma segunda cor de destaque.",
+      "Don't usar verde, laranja ou vermelho como decoração.",
+      "Don't voltar ao painel único de formulário longo nem aos círculos coloridos com letra no lugar do ícone do app.",
+      "Don't usar emoji ou glifos de texto no lugar de SF Symbols.",
+      "Don't deixar um estado novo mover o mapa; reserve espaço fixo.",
+      "Don't ancorar novas telas nos valores soltos de raio e fonte (14 pt, 9 pt, texto branco sobre acento a 90%) sem promovê-los antes ao sistema."
+    ]
+  }
+}

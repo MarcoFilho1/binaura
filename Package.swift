@@ -2,12 +2,12 @@
 import PackageDescription
 
 let package = Package(
-    name: "anyspace",
+    name: "binaura",
     platforms: [.macOS("15.0")],
     targets: [
-        .target(name: "AnyspaceCore", path: "Sources/AnyspaceCore"),
-        .executableTarget(name: "anyspace", dependencies: ["AnyspaceCore"], path: "Sources/anyspace"),
-        .executableTarget(name: "AnyspaceApp", dependencies: ["AnyspaceCore"], path: "Sources/AnyspaceApp"),
-        .executableTarget(name: "anyspace-check", dependencies: ["AnyspaceCore"], path: "Sources/anyspace-check"),
+        .target(name: "BinauraCore", path: "Sources/BinauraCore"),
+        .executableTarget(name: "binaura", dependencies: ["BinauraCore"], path: "Sources/binaura"),
+        .executableTarget(name: "BinauraApp", dependencies: ["BinauraCore"], path: "Sources/BinauraApp"),
+        .executableTarget(name: "binaura-check", dependencies: ["BinauraCore"], path: "Sources/binaura-check"),
     ]
 )
