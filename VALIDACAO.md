@@ -73,3 +73,10 @@ Verificação offline já passou em loopback (pacote, senha errada rejeitada, á
 - [ ] Em outro Mac (ou neste, em outro terminal): `build/AnyspaceCLI.app/Contents/MacOS/AnyspaceCLI --send IP:5004 --password SENHA`. O som do outro Mac sai na bolinha?
 - [ ] Atraso e falhas na sua rede Wi-Fi? (PCM sem compressão ≈ 1,5 Mbit/s)
 - [ ] Windows/Android ainda não têm remetente; o formato do pacote está em `NetworkAudio.swift`.
+
+## Perfis (aguardando você)
+Verificação offline já passou: salvar, aplicar, substituir, apagar, guardar em disco, e abrir arquivos de versões antigas sem perder a cena.
+- [ ] Arrume o mapa (posições, volume, abertura), escreva "Trabalho" e clique em "Salvar atual".
+- [ ] Mude tudo, crie "Filme" com outro arranjo e use "Aplicar perfil": as posições voltam exatamente?
+- [ ] O menu da barra de menu lista os perfis e troca de perfil?
+- [ ] Feche com Cmd+Q e reabra: os perfis continuam lá?

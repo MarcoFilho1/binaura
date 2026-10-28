@@ -159,6 +159,35 @@ expect(rootBundleID("com.google.Chrome.helper.Renderer") == "com.google.Chrome",
 expect(rootBundleID("com.apple.WebKit.GPU") == "com.apple.Safari", "WebKit agrupa no Safari")
 expect(rootBundleID("com.spotify.client") == "com.spotify.client", "app simples permanece igual")
 
+print("\nPerfis")
+var withProfiles = SoundScene()
+withProfiles.rest.angle = -30
+withProfiles.apps.append(SourceSetting(id: "com.google.Chrome", name: "Chrome", angle: 40, distance: 2))
+withProfiles.width = 45
+withProfiles.saveProfile(named: "Trabalho")
+withProfiles.rest.angle = 70; withProfiles.apps.removeAll(); withProfiles.width = 10; withProfiles.reverbOn = false
+withProfiles.saveProfile(named: "Filme")
+expect(withProfiles.profiles.map(\.name) == ["Trabalho", "Filme"], "dois perfis salvos")
+expect(withProfiles.applyProfile(named: "Trabalho") && withProfiles.rest.angle == -30 && withProfiles.apps.count == 1
+       && withProfiles.width == 45 && withProfiles.reverbOn, "aplicar 'Trabalho' restaura posições, abertura e reverberação")
+expect(withProfiles.applyProfile(named: "Filme") && withProfiles.rest.angle == 70 && withProfiles.apps.isEmpty, "aplicar 'Filme' restaura o outro estado")
+withProfiles.saveProfile(named: "Filme")
+expect(withProfiles.profiles.count == 2, "salvar com o mesmo nome substitui")
+expect(!withProfiles.applyProfile(named: "inexistente"), "perfil inexistente não faz nada")
+withProfiles.deleteProfile(named: "Filme")
+expect(withProfiles.profiles.map(\.name) == ["Trabalho"], "apagar remove só o escolhido")
+let profileURL = FileManager.default.temporaryDirectory.appendingPathComponent("anyspace-p-\(UUID().uuidString).json")
+SceneStore.save(withProfiles, to: profileURL)
+expect(SceneStore.load(from: profileURL) == withProfiles, "perfis sobrevivem a salvar e carregar")
+try? FileManager.default.removeItem(at: profileURL)
+let oldJSON = #"{"rest":{"id":"rest","name":"Resto do sistema","angle":-21,"distance":0.5,"volume":1,"muted":false},"apps":[],"width":30}"#
+let oldURL = FileManager.default.temporaryDirectory.appendingPathComponent("anyspace-old-\(UUID().uuidString).json")
+try? oldJSON.write(to: oldURL, atomically: true, encoding: .utf8)
+let loadedOld = SceneStore.load(from: oldURL)
+expect(loadedOld.rest.angle == -21 && loadedOld.profiles.isEmpty && loadedOld.algorithm == "HRTFHQ",
+       "arquivo de versão antiga (sem campos novos) mantém o que existe e completa o resto")
+try? FileManager.default.removeItem(at: oldURL)
+
 print("\nFila circular")
 let ring = MonoRingBuffer(capacityPowerOfTwo: 1024, maxFill: 300, targetFill: 100)
 let input = (0..<200).map { Float($0) }; var output = [Float](repeating: -1, count: 50)

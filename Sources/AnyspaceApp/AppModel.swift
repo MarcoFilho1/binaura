@@ -178,6 +178,10 @@ final class AppModel: ObservableObject {
         message = session.lastError
     }
 
+    func saveProfile(_ name: String) { scene.saveProfile(named: name); message = nil }
+    func applyProfile(_ name: String) { scene.applyProfile(named: name) }
+    func deleteProfile(_ name: String) { scene.deleteProfile(named: name) }
+
     func removeApp(_ id: String) { scene.apps.removeAll { $0.id == id } }
 
     func calibrate() { head.calibrate(); headStatus = "Centro recalibrado" }
