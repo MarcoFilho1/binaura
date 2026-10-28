@@ -44,8 +44,13 @@ struct BinauraApp: App {
         } label: {
             Image(systemName: model.message != nil && !model.effectOn ? "exclamationmark.triangle.fill"
                   : (model.effectOn ? "waveform.circle.fill" : "waveform.circle"))
-                .accessibilityLabel("Binaura, efeito \(model.effectOn ? "ligado" : "desligado")\(model.message != nil ? ", com aviso" : "")")
+                .accessibilityLabel(menuIconLabel)
         }
         .menuBarExtraStyle(.window)
+    }
+
+    private var menuIconLabel: String {
+        let state = model.effectOn ? String(localized: "ligado") : String(localized: "desligado")
+        return model.message != nil ? String(localized: "Binaura, efeito \(state), com aviso") : String(localized: "Binaura, efeito \(state)")
     }
 }

@@ -21,7 +21,7 @@
 </p>
 
 <p align="center">
-  <img alt="The Binaura window: a map seen from above with the Chrome and Music icons moving around the listener, whose view cone turns with the head; the inspector on the right follows the selected source" src="docs/media/map.gif" width="800">
+  <img alt="The Binaura window: a map seen from above with the Chrome and Music icons moving around the listener, whose view cone turns with the head; the inspector on the right follows the selected source" src="docs/media/en/map.gif" width="800">
 </p>
 
 ## Why
@@ -52,8 +52,8 @@ cd binaura
 
 <p align="center">
   <picture>
-    <source media="(prefers-color-scheme: dark)" srcset="docs/media/welcome-dark.png">
-    <img alt="The welcome window: use headphones, allow audio capture, the camera is optional, turning it off gives the normal sound back; a Turn on and start button" src="docs/media/welcome-light.png" width="380">
+    <source media="(prefers-color-scheme: dark)" srcset="docs/media/en/welcome-dark.png">
+    <img alt="The welcome window: use headphones, allow audio capture, the camera is optional, turning it off gives the normal sound back; a Turn on and start button" src="docs/media/en/welcome-light.png" width="380">
   </picture>
 </p>
 
@@ -70,8 +70,8 @@ The map shows the space around you from above, with you in the middle looking up
 
 <p align="center">
   <picture>
-    <source media="(prefers-color-scheme: dark)" srcset="docs/media/main-dark.png">
-    <img alt="The Binaura window with four sources on the map, the inspector open on Google Chrome with volume, direction and distance" src="docs/media/main-light.png" width="800">
+    <source media="(prefers-color-scheme: dark)" srcset="docs/media/en/main-dark.png">
+    <img alt="The Binaura window with four sources on the map, the inspector open on Google Chrome with volume, direction and distance" src="docs/media/en/main-light.png" width="800">
   </picture>
 </p>
 
@@ -102,8 +102,8 @@ Most of the time you don't need the window. The menu bar panel turns the effect 
 
 <p align="center">
   <picture>
-    <source media="(prefers-color-scheme: dark)" srcset="docs/media/menu-dark.png">
-    <img alt="The menu bar panel: a switch, the Work profile selected, and a volume slider for each source" src="docs/media/menu-light.png" width="300">
+    <source media="(prefers-color-scheme: dark)" srcset="docs/media/en/menu-dark.png">
+    <img alt="The menu bar panel: a switch, the Work profile selected, and a volume slider for each source" src="docs/media/en/menu-light.png" width="300">
   </picture>
 </p>
 
@@ -116,8 +116,8 @@ Most of the time you don't need the window. The menu bar panel turns the effect 
 
 <p align="center">
   <picture>
-    <source media="(prefers-color-scheme: dark)" srcset="docs/media/blind-test-dark.png">
-    <img alt="The blind test window: round 1 of 12, a Play button and three buttons: Left, Front, Right" src="docs/media/blind-test-light.png" width="460">
+    <source media="(prefers-color-scheme: dark)" srcset="docs/media/en/blind-test-dark.png">
+    <img alt="The blind test window: round 1 of 12, a Play button and three buttons: Left, Front, Right" src="docs/media/en/blind-test-light.png" width="460">
   </picture>
 </p>
 
@@ -133,6 +133,7 @@ Binaura silences the original sound of the apps it places, so it has to be caref
 
 - **Another device as a source.** A second Mac can send its audio over your local network to appear on the map as one more source. It's a minimal version: unencrypted (a password only keeps other devices out), so use it on a network you trust.
 - **Open at login**, and a menu bar icon that shows when something needs attention.
+- **English and Portuguese.** The interface follows your Mac's language. To pick one yourself, open **Profiles and advanced → Language** and reopen the app.
 - **Light and dark mode**, and it respects *Reduce motion*.
 
 ## FAQ
@@ -140,6 +141,8 @@ Binaura silences the original sound of the apps it places, so it has to be caref
 **Does it work with any headphones?** Yes, any output. The effect is designed for headphones: on the Mac's speakers the two ears hear a mix of both speakers, and most of the spatial cues are lost.
 
 **Do I need AirPods?** No. AirPods already have their own spatial audio with head tracking; Binaura is for all the other headphones. It also works with AirPods, but there is little reason to use both.
+
+**Which languages does it speak?** English and Portuguese. It follows the language of your Mac, and you can change it in **Profiles and advanced → Language** (the app reopens to apply it). Other languages fall back to English.
 
 **Does it install an audio driver?** No. It uses the system's Core Audio tap (macOS 14.2 and later) to hear what each app plays, and plays the result itself.
 

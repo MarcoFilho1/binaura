@@ -17,6 +17,8 @@ make_app() {  # nome, executável compilado, id do bundle, LSUIElement, ícone (
     mkdir -p "$app/Contents/Resources"
     cp Resources/AppIcon.icns "$app/Contents/Resources/AppIcon.icns"
     icon_key="<key>CFBundleIconFile</key><string>AppIcon</string>"
+    # Idiomas da interface: inglês (en.lproj traduz os textos em português do código) e português.
+    for lproj in Resources/*.lproj; do cp -R "$lproj" "$app/Contents/Resources/"; done
   fi
   cat > "$app/Contents/Info.plist" <<PLIST
 <?xml version="1.0" encoding="UTF-8"?>
@@ -26,6 +28,8 @@ make_app() {  # nome, executável compilado, id do bundle, LSUIElement, ícone (
   <key>CFBundleIdentifier</key><string>$3</string>
   <key>CFBundleName</key><string>$1</string>
   <key>CFBundleExecutable</key><string>$1</string>
+  <key>CFBundleDevelopmentRegion</key><string>en</string>
+  <key>CFBundleLocalizations</key><array><string>en</string><string>pt</string></array>
   $icon_key
   <key>CFBundlePackageType</key><string>APPL</string>
   <key>CFBundleVersion</key><string>0.4</string>
@@ -33,8 +37,8 @@ make_app() {  # nome, executável compilado, id do bundle, LSUIElement, ícone (
   <key>LSMinimumSystemVersion</key><string>15.0</string>
   <key>LSUIElement</key><$4/>
   <key>NSHighResolutionCapable</key><true/>
-  <key>NSAudioCaptureUsageDescription</key><string>O Binaura captura o som do Mac para posicioná-lo no espaço no seu fone.</string>
-  <key>NSCameraUsageDescription</key><string>O Binaura usa a câmera para medir a rotação da sua cabeça.</string>
+  <key>NSAudioCaptureUsageDescription</key><string>Binaura captures the Mac's sound to place it in space on your headphones.</string>
+  <key>NSCameraUsageDescription</key><string>Binaura uses the camera to measure how much your head turns.</string>
 </dict>
 </plist>
 PLIST

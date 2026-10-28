@@ -38,8 +38,8 @@ struct StageView: View {
             .overlay(alignment: .top) { notice.padding([.horizontal, .top], Space.l) }
             .overlay(alignment: .bottom) {
                 if model.effectOn {
-                    Text(focused ? "Setas: esquerda e direita giram a fonte, cima e baixo a aproximam ou afastam."
-                                 : "Arraste uma fonte para mudar de lugar, ou selecione e use as setas do teclado.")
+                    Text(LocalizedStringKey(focused ? "Setas: esquerda e direita giram a fonte, cima e baixo a aproximam ou afastam."
+                                 : "Arraste uma fonte para mudar de lugar, ou selecione e use as setas do teclado."))
                         .font(.system(size: 12)).foregroundStyle(focused ? Color.primary : Color.secondary)
                         .padding(.bottom, Space.l)
                 } else {
@@ -174,7 +174,7 @@ private struct HeadMarker: View {
         .position(center)
         .accessibilityElement(children: .ignore)
         .accessibilityLabel("Você")
-        .accessibilityValue(tracking ? "Cabeça virada \(Describe.angle(model.headAngle))" : "Olhando para a frente")
+        .accessibilityValue(tracking ? String(localized: "Cabeça virada \(Describe.angle(model.headAngle))") : String(localized: "Olhando para a frente"))
 
         if tracking {
             Text(String(format: "%+.0f°", model.headAngle))
@@ -279,7 +279,7 @@ private struct SourceDisc: View {
                         .padding(4).background(Color.secondary, in: Circle()).offset(x: 17, y: 17)
                 }
             }
-            Text(source.name)
+            Text(source.displayName)
                 .font(.system(size: 11, weight: selected ? .semibold : .regular))
                 .lineLimit(1)
                 .padding(.horizontal, Space.s).padding(.vertical, 2)
@@ -300,14 +300,14 @@ private struct SourceDisc: View {
         )
         .onTapGesture { model.selectedID = source.id; onSelect() }
         .accessibilityElement(children: .ignore)
-        .accessibilityLabel(source.name)
-        .accessibilityValue("\(Describe.angle(source.angle)), a \(Describe.meters(source.distance)), volume \(Int(source.volume * 100)) por cento\(source.muted ? ", mudo" : "")")
+        .accessibilityLabel(source.displayName)
+        .accessibilityValue(String(localized: "\(Describe.angle(source.angle)), a \(Describe.meters(source.distance)), volume \(Int(source.volume * 100)) por cento") + (source.muted ? String(localized: ", mudo") : ""))
         .accessibilityAddTraits(selected ? [.isButton, .isSelected] : .isButton)
         .accessibilityAdjustableAction { direction in
             model.selectedID = source.id
             model.nudge(source.id, angle: direction == .increment ? 5 : -5)
         }
-        .help("\(source.name): \(Describe.angle(source.angle)), \(Describe.meters(source.distance))")
+        .help("\(source.displayName): \(Describe.angle(source.angle)), \(Describe.meters(source.distance))")
     }
 }
 

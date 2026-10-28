@@ -1,0 +1,197 @@
+/* Binaura: English strings. The keys are the Portuguese texts used in the source code. */
+
+/* Head tracking status */
+"Rastreio desligado" = "Head tracking off";
+"Responda ao pedido de acesso à câmera" = "Answer the camera access request";
+"Ligando a câmera…" = "Starting the camera…";
+"Olhe para a tela por 2 s (calibrando)" = "Look at the screen for 2 s (calibrating)";
+"Acompanhando a cabeça" = "Following your head";
+"Rosto não encontrado" = "Face not found";
+"Câmera pausada: sem som tocando" = "Camera paused: no sound playing";
+"Erro: permissão da câmera" = "Error: camera permission";
+"Erro: câmera indisponível" = "Error: camera unavailable";
+"Trocando de câmera…" = "Switching camera…";
+"Centro recalibrado" = "Center recalibrated";
+
+/* Notices and errors */
+"Câmera: permissão negada. Libere o Binaura em Ajustes do Sistema > Privacidade e Segurança > Câmera." = "Camera: permission denied. Allow Binaura in System Settings > Privacy & Security > Camera.";
+"Câmera: %@" = "Camera: %@";
+"Rede %lld" = "Network %lld";
+"Abrir no login: %@" = "Open at login: %@";
+"criar tap (OSStatus %lld); permissão de áudio concedida?" = "create tap (OSStatus %lld); was audio permission granted?";
+"motor de áudio: %@" = "audio engine: %@";
+"Defina uma senha para receber áudio pela rede" = "Set a password to receive audio over the network";
+"porta %lld: %@" = "port %lld: %@";
+"permissão de câmera negada (Ajustes > Privacidade > Câmera)" = "camera permission denied (Settings > Privacy > Camera)";
+"nenhuma câmera encontrada: %@" = "no camera found: %@";
+
+/* Directions and accessibility */
+"à frente" = "in front";
+"atrás" = "behind";
+"%lld° à direita" = "%lld° to the right";
+"%lld° à esquerda" = "%lld° to the left";
+"Resto do sistema" = "Rest of the system";
+"Você" = "You";
+"Cabeça virada %@" = "Head turned %@";
+"Olhando para a frente" = "Looking straight ahead";
+"%@, a %@, volume %lld por cento" = "%@, at %@, volume %lld percent";
+", mudo" = ", muted";
+"Mapa do som ao seu redor" = "Map of the sound around you";
+"Seleciona a fonte para ajustar" = "Selects the source to adjust";
+"Dispensar" = "Dismiss";
+"Dispensar aviso" = "Dismiss the notice";
+"Binaura, efeito %@" = "Binaura, effect %@";
+"Binaura, efeito %@, com aviso" = "Binaura, effect %@, with a warning";
+"ligado" = "on";
+"desligado" = "off";
+"Reativar %@" = "Unmute %@";
+"Silenciar %@" = "Mute %@";
+"Volume de %@" = "Volume of %@";
+"Apagar perfil %@" = "Delete profile %@";
+
+/* Main window */
+"Efeito espacial" = "Spatial effect";
+"Liga ou desliga o efeito. Desligado, o som do Mac sai normal." = "Turns the effect on or off. When off, the Mac's sound plays normally.";
+"Perfis" = "Profiles";
+"Perfis salvos" = "Saved profiles";
+"Salvar configuração atual…" = "Save current setup…";
+"Inspetor" = "Inspector";
+"Esconder o inspetor" = "Hide the inspector";
+"Mostrar o inspetor" = "Show the inspector";
+"Salvar perfil" = "Save profile";
+"Nome (ex.: Trabalho, Filme)" = "Name (e.g. Work, Movie)";
+"Salvar" = "Save";
+"Cancelar" = "Cancel";
+"Guarda posições, volumes, abertura, reverberação e filtro." = "Saves positions, volumes, width, reverb and filter.";
+"Ligado · %@" = "On · %@";
+"Desligado" = "Off";
+
+/* Stage (map) */
+"Frente" = "Front";
+"Trás" = "Back";
+"Esquerda" = "Left";
+"Direita" = "Right";
+"Setas: esquerda e direita giram a fonte, cima e baixo a aproximam ou afastam." = "Arrows: left and right turn the source, up and down bring it closer or farther.";
+"Arraste uma fonte para mudar de lugar, ou selecione e use as setas do teclado." = "Drag a source to move it, or select it and use the arrow keys.";
+"Abrir Ajustes…" = "Open Settings…";
+"Efeito desligado" = "Effect off";
+"O som do Mac sai normalmente pelo fone." = "The Mac's sound plays normally through your headphones.";
+"Tentar de novo" = "Try again";
+"Ligar efeito espacial" = "Turn on the spatial effect";
+
+/* Inspector */
+"Fontes" = "Sources";
+"Reativar o som" = "Turn the sound back on";
+"Silenciar" = "Mute";
+"Nenhum app com áudio aberto" = "No app with audio open";
+"Adicionar app ao mapa" = "Add app to the map";
+"Apps fora do mapa continuam no “Resto do sistema”." = "Apps outside the map keep playing from “Rest of the system”.";
+"Direção" = "Direction";
+"Distância" = "Distance";
+"Remover do mapa" = "Remove from the map";
+"Direção: 0° é à frente, 90° à direita, -90° à esquerda e 180° atrás. Distância de 0,5 a 4 m." = "Direction: 0° is in front, 90° to the right, -90° to the left and 180° behind. Distance from 0.5 to 4 m.";
+"Cabeça" = "Head";
+"Acompanhar a cabeça" = "Follow my head";
+"Abrir Ajustes da câmera…" = "Open camera Settings…";
+"Câmera" = "Camera";
+"Do Mac (padrão)" = "The Mac's (default)";
+"Ângulo" = "Angle";
+"Estado" = "Status";
+"Calibrar centro" = "Calibrate center";
+"Câmera de debug…" = "Camera debug…";
+"Inverter o sentido" = "Reverse the direction";
+"Vire para a direita: o som parado à sua frente passa para o ouvido esquerdo. A câmera só fica ligada enquanto há som tocando." = "Turn to the right: the sound that stays in front of you moves to your left ear. The camera only runs while sound is playing.";
+"Som" = "Sound";
+"Abertura do estéreo" = "Stereo width";
+"Reverberação de sala" = "Room reverb";
+"Intensidade da reverberação" = "Reverb level";
+"Filtro de direção" = "Direction filter";
+"HRTF alta qualidade" = "High-quality HRTF";
+"Cabeça esférica" = "Spherical head";
+"Só pan (sem HRTF)" = "Pan only (no HRTF)";
+"Teste cego…" = "Blind test…";
+"Imita a cabeça e as orelhas com menos processamento." = "Imitates the head and ears with less processing.";
+"Trata a cabeça como uma bola lisa: esquerda e direita bem marcadas, frente e trás menos." = "Treats the head as a smooth ball: left and right are well marked, front and back less so.";
+"Só muda o volume entre os ouvidos, sem noção de profundidade." = "Only changes the volume between the ears, with no sense of depth.";
+"O mais preciso: imita a cabeça e as orelhas. Usa um pouco mais de processador." = "The most precise: imitates the head and ears. Uses a bit more processing.";
+"Perfis e avançado" = "Profiles and advanced";
+"expandido" = "expanded";
+"recolhido" = "collapsed";
+"Mostra ou esconde perfis, rede e abrir ao iniciar" = "Shows or hides profiles, network and open at login";
+"Abrir ao iniciar o Mac" = "Open at Mac startup";
+"Idioma" = "Language";
+"Automático (sistema)" = "Automatic (system)";
+"Reabra o app para trocar o idioma." = "Reopen the app to change the language.";
+"Reabrir agora" = "Reopen now";
+"Apagar perfil" = "Delete profile";
+"Nome do perfil" = "Profile name";
+"Salvar atual" = "Save current";
+"Guarda posições, volumes, abertura, reverberação e filtro. Também no menu Perfis da barra de ferramentas." = "Saves positions, volumes, width, reverb and filter. Also in the Profiles menu of the toolbar.";
+"Outro dispositivo (rede local)" = "Another device (local network)";
+"Senha" = "Password";
+"Porta" = "Port";
+"Porta de rede" = "Network port";
+"Receber áudio nessa porta" = "Receive audio on this port";
+"No outro Mac: BinauraCLI --send IP:PORTA --password SENHA. Sem criptografia: use só em rede de confiança." = "On the other Mac: BinauraCLI --send IP:PORT --password PASSWORD. Not encrypted: use it only on a network you trust.";
+
+/* Menu bar panel */
+"Perfil" = "Profile";
+"O som do Mac sai normalmente." = "The Mac's sound plays normally.";
+"Abrir Binaura…" = "Open Binaura…";
+"Sair do Binaura" = "Quit Binaura";
+
+/* Camera debug */
+"Câmera (debug)" = "Camera (debug)";
+"Imagem da câmera" = "Camera image";
+"Para onde você olha" = "Where you are looking";
+"Olhar (estimado)" = "Gaze (estimated)";
+"Estimativa sem calibração: soma a direção da cabeça com a posição da pupila no olho. Serve para comparar, não para medir com precisão." = "Uncalibrated estimate: it adds the head direction to the position of the pupil in the eye. Use it to compare, not to measure precisely.";
+"Olhe para a tela e clique em “Calibrar centro”. Vire a cabeça para a direita: o ângulo deve ficar positivo e a rede de pontos deve acompanhar o rosto. Esta janela não gira o som; para isso ligue “Acompanhar a cabeça”." = "Look at the screen and click “Calibrate center”. Turn your head to the right: the angle should become positive and the mesh should follow your face. This window does not turn the sound; for that, turn on “Follow my head”.";
+"Tela em miniatura com o ponto estimado do olhar" = "Small screen with the estimated gaze point";
+"Sem rosto" = "No face";
+"Filtrado %@" = "Smoothed %@";
+"Bruto da câmera %@" = "Raw from camera %@";
+"%@ filtrado" = "%@ smoothed";
+"esquerda" = "left";
+"direita" = "right";
+"Ângulo da cabeça" = "Head angle";
+"centro" = "center";
+"%lld° direita" = "%lld° right";
+"%lld° esquerda" = "%lld° left";
+"%lld° cima" = "%lld° up";
+"%lld° baixo" = "%lld° down";
+
+/* Blind test */
+"Teste cego" = "Blind test";
+"Filtro atual: %@. O resto do som fica mudo durante o teste. Use fones." = "Current filter: %@. The rest of the sound is muted during the test. Use headphones.";
+"Rodada %lld de %lld" = "Round %lld of %lld";
+"Tocar" = "Play";
+"Tocar de novo" = "Play again";
+"De onde veio o som?" = "Where did the sound come from?";
+"Fechar" = "Close";
+"Concluir" = "Done";
+"cabeça esférica" = "spherical head";
+"HRTF (alta qualidade)" = "high-quality HRTF";
+"só pan" = "pan only";
+"Acertos: %lld de %lld" = "Correct: %lld of %lld";
+"ouvi %@" = "heard %@";
+"era %@" = "was %@";
+"Repetir" = "Repeat";
+
+/* Welcome */
+"Bem-vindo ao Binaura" = "Welcome to Binaura";
+"Coloque cada app em um lugar ao seu redor, com o fone que você já tem." = "Put each app somewhere around you, with the headphones you already have.";
+"Use fones de ouvido" = "Use headphones";
+"O efeito foi feito para fones. Nos alto-falantes do Mac ele quase não aparece." = "The effect was made for headphones. On the Mac's speakers it hardly shows.";
+"Permita a captura de áudio" = "Allow audio capture";
+"O macOS vai pedir. O Binaura precisa ouvir o som dos apps para posicioná-lo e silencia o original enquanto está ligado." = "macOS will ask. Binaura needs to hear the apps' sound to place it, and it mutes the original while it is on.";
+"A câmera é opcional" = "The camera is optional";
+"Se quiser que o espaço fique parado quando você vira a cabeça, ligue “Acompanhar a cabeça”. Ela só funciona com som tocando." = "If you want the space to stay still when you turn your head, turn on “Follow my head”. It only runs while sound is playing.";
+"Desligar devolve o som normal" = "Turning it off gives the normal sound back";
+"O interruptor no topo da janela e na barra de menu desfaz tudo na hora." = "The switch at the top of the window and in the menu bar undoes everything right away.";
+"Ligar e começar" = "Turn on and start";
+
+/* Sample data (screenshots) */
+"Música" = "Music";
+"Trabalho" = "Work";
+"Filme" = "Movie";

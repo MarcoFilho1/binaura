@@ -16,7 +16,7 @@ struct MainWindowView: View {
                 InspectorView().inspectorColumnWidth(min: 300, ideal: 340, max: 440)
             }
             .navigationTitle("Binaura")
-            .navigationSubtitle(model.effectOn ? "Ligado · \(model.outputName)" : "Desligado")
+            .navigationSubtitle(model.effectOn ? String(localized: "Ligado · \(model.outputName)") : String(localized: "Desligado"))
             .toolbar {
                 ToolbarItem(placement: .navigation) {
                     Toggle("Efeito espacial", isOn: Binding(get: { model.effectOn }, set: { model.setEffect($0) }))
@@ -41,7 +41,7 @@ struct MainWindowView: View {
                     }
                     .help("Perfis salvos")
                     Button { showInspector.toggle() } label: { Label("Inspetor", systemImage: "sidebar.right") }
-                        .help(showInspector ? "Esconder o inspetor" : "Mostrar o inspetor")
+                        .help(LocalizedStringKey(showInspector ? "Esconder o inspetor" : "Mostrar o inspetor"))
                 }
             }
             .alert("Salvar perfil", isPresented: $askProfileName) {

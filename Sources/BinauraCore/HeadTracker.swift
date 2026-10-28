@@ -47,13 +47,13 @@ public final class HeadTracker: NSObject, AVCaptureVideoDataOutputSampleBufferDe
 
     public func start(cameraNameContains name: String?, fps: Double = 20, completion: @escaping (String?) -> Void) {
         AVCaptureDevice.requestAccess(for: .video) { granted in
-            guard granted else { return completion("permissão de câmera negada (Ajustes > Privacidade > Câmera)") }
+            guard granted else { return completion(String(localized: "permissão de câmera negada (Ajustes > Privacidade > Câmera)")) }
             let devices = Self.cameras()
             let device = name.flatMap { n in devices.first { $0.localizedName.localizedCaseInsensitiveContains(n) } }
                 ?? devices.first { $0.deviceType == .builtInWideAngleCamera }
                 ?? devices.first
             guard let device, let input = try? AVCaptureDeviceInput(device: device) else {
-                return completion("nenhuma câmera encontrada: \(devices.map(\.localizedName))")
+                return completion(String(localized: "nenhuma câmera encontrada: \(devices.map(\.localizedName))"))
             }
             self.session.beginConfiguration()
             self.session.sessionPreset = .vga640x480

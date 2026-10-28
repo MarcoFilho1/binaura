@@ -7,6 +7,8 @@ public final class Session {
     public private(set) var scene: SoundScene
     public private(set) var isRunning = false
     public private(set) var lastError: String?
+    /// A interface usa isto para oferecer o atalho para os Ajustes do Sistema (sem depender do texto do erro).
+    public private(set) var lastErrorNeedsAudioPermission = false
 
     private var outputDevice: AudioObjectID
     private var engine: SpatialEngine
@@ -75,11 +77,12 @@ public final class Session {
     public func start() {
         guard !isRunning else { return }
         do { try engine.start() } catch {
-            lastError = "motor de áudio: \(error)"
+            lastError = String(localized: "motor de áudio: \(String(describing: error))")
             return
         }
         isRunning = true
         lastError = nil
+        lastErrorNeedsAudioPermission = false
         startReceivers()
         refresh()
     }
@@ -111,12 +114,12 @@ public final class Session {
     private func startReceivers() {
         for s in scene.apps {
             guard let port = SoundScene.networkPort(of: s.id), receivers[s.id] == nil, let ring = rings[s.id] else { continue }
-            guard !scene.networkPassword.isEmpty else { lastError = "Defina uma senha para receber áudio pela rede"; continue }
+            guard !scene.networkPassword.isEmpty else { lastError = String(localized: "Defina uma senha para receber áudio pela rede"); continue }
             do {
                 let receiver = try UDPAudioReceiver(port: port, password: scene.networkPassword, left: ring.left, right: ring.right)
                 receiver.start()
                 receivers[s.id] = receiver
-            } catch { lastError = "porta \(port): \(error.localizedDescription)" }
+            } catch { lastError = String(localized: "porta \(Int(port)): \(error.localizedDescription)") }
         }
     }
 
@@ -128,6 +131,7 @@ public final class Session {
         let tap = TapCapture(target: target, outputDevice: outputDevice, left: ring.left, right: ring.right)
         if let error = tap.start() {
             lastError = error
+            lastErrorNeedsAudioPermission = tap.failedAtTap
             tap.stop()
         } else {
             taps[id] = tap
