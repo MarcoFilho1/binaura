@@ -1,5 +1,5 @@
-import AnyspaceCore
 import AVFoundation
+import AnyspaceCore
 import AppKit
 import Foundation
 import ServiceManagement
@@ -16,6 +16,18 @@ final class HeadValue: @unchecked Sendable {
     func shouldApply() -> Bool { lock.lock(); defer { lock.unlock() }; return apply }
 }
 
+/// Problema que a pessoa resolve fora do app (nas permissões do macOS).
+enum PermissionIssue {
+    case audio, camera
+
+    var settingsURL: URL {
+        switch self {
+        case .audio: URL(string: "x-apple.systempreferences:com.apple.preference.security?Privacy_AudioCapture")!
+        case .camera: URL(string: "x-apple.systempreferences:com.apple.preference.security?Privacy_Camera")!
+        }
+    }
+}
+
 @MainActor
 final class AppModel: ObservableObject {
     @Published var scene: SoundScene { didSet { sceneChanged() } }
@@ -27,20 +39,28 @@ final class AppModel: ObservableObject {
     @Published var cameras: [String] = []
     @Published var headRaw: Float?
     @Published var faceBox: CGRect?
+    @Published var levels: [String: Float] = [:]
+    @Published var selectedID: String? = SoundScene.restID
     @Published var debugCameraOpen = false { didSet { tick() } }
-    private var lastCamera = ""
-    private var lastInvert = false
-    var previewSession: AVCaptureSession? { head.previewSession }
+    @Published var outputName = ""
+    @Published var showBlindTest = false
 
     let session: Session
+    let isPreview: Bool
     private let head: HeadController
     private let headValue = HeadValue()
     private var idleSeconds = 0
+    private var lastCamera = ""
+    private var lastInvert = false
     private var saveTask: DispatchWorkItem?
     private var timers: [Timer] = []
 
-    init(startEffect: Bool) {
-        let scene = SceneStore.load()
+    var previewSession: AVCaptureSession? { head.previewSession }
+
+    /// `preview` desliga tudo o que toca em áudio, câmera e disco, para gerar capturas de tela com dados de exemplo.
+    init(startEffect: Bool, preview: SoundScene? = nil) {
+        isPreview = preview != nil
+        let scene = preview ?? SceneStore.load()
         self.scene = scene
         session = Session(scene: scene)
         let value = headValue
@@ -52,12 +72,15 @@ final class AppModel: ObservableObject {
         lastCamera = scene.cameraName
         lastInvert = scene.invertHead
         headValue.setApply(scene.headTracking)
+        outputName = session.outputName
+        guard !isPreview else { return }
+
         cameras = HeadTracker.cameras().map(\.localizedName)
         timers.append(Timer.scheduledTimer(withTimeInterval: 2, repeats: true) { [weak self] _ in
             Task { @MainActor in self?.tick() }
         })
         timers.append(Timer.scheduledTimer(withTimeInterval: 0.1, repeats: true) { [weak self] _ in
-            Task { @MainActor in self?.refreshHead() }
+            Task { @MainActor in self?.refreshFast() }
         })
         if startEffect { setEffect(true) }
         tick()
@@ -74,6 +97,7 @@ final class AppModel: ObservableObject {
             head.stop()
             session.stop()
             effectOn = false
+            levels = [:]
             headStatus = "Rastreio desligado"
         }
     }
@@ -86,7 +110,9 @@ final class AppModel: ObservableObject {
     // MARK: ciclo periódico
 
     private func tick() {
+        guard !isPreview else { return }
         if effectOn != session.isRunning { effectOn = session.isRunning }
+        outputName = session.outputName
         availableApps = listAudioApps()
         cameras = HeadTracker.cameras().map(\.localizedName)
         if effectOn {
@@ -109,7 +135,6 @@ final class AppModel: ObservableObject {
                         self.scene.headTracking = false
                     } else {
                         self.headStatus = "Olhe para a tela por 2 s (calibrando)"
-                        self.objectWillChange.send()
                     }
                 }
             }
@@ -120,7 +145,8 @@ final class AppModel: ObservableObject {
         }
     }
 
-    private func refreshHead() {
+    private func refreshFast() {
+        if effectOn { levels = session.takeLevels() }
         guard head.isRunning else {
             if headAngle != 0 { headAngle = 0 }
             return
@@ -130,13 +156,14 @@ final class AppModel: ObservableObject {
         headRaw = stats.raw
         faceBox = stats.box
         if stats.frames > 0 {
-            headStatus = stats.faces == 0 ? "Rosto não encontrado" : String(format: "Cabeça %+.0f°", stats.filtered)
+            headStatus = stats.faces == 0 ? "Rosto não encontrado" : "Acompanhando a cabeça"
         }
     }
 
     // MARK: cena
 
     private func sceneChanged() {
+        guard !isPreview else { return }
         session.setScene(scene)
         saveTask?.cancel()
         let snapshot = scene
@@ -154,37 +181,78 @@ final class AppModel: ObservableObject {
             head.stop()
             headStatus = "Rastreio desligado"
         }
+        if let selectedID, !scene.all.contains(where: { $0.id == selectedID }) { self.selectedID = SoundScene.restID }
+    }
+
+    func source(_ id: String) -> SourceSetting? { scene.all.first { $0.id == id } }
+
+    func update(_ id: String, _ change: (inout SourceSetting) -> Void) {
+        guard var s = source(id) else { return }
+        change(&s)
+        scene.update(s)
     }
 
     func move(_ id: String, angle: Float, distance: Float) {
-        guard var s = scene.all.first(where: { $0.id == id }) else { return }
-        s.angle = angle
-        s.distance = distance
-        scene.update(s)
+        update(id) { $0.angle = angle; $0.distance = distance }
+    }
+
+    /// Alternativa por teclado ao arrastar: gira (em graus) e afasta (em metros).
+    func nudge(_ id: String, angle: Float = 0, distance: Float = 0) {
+        update(id) {
+            var a = $0.angle + angle
+            if a > 180 { a -= 360 }
+            if a < -180 { a += 360 }
+            $0.angle = a
+            $0.distance = min(max($0.distance + distance, 0.5), 4)
+        }
     }
 
     func addApp(_ app: AudioApp) {
         guard !scene.apps.contains(where: { $0.id == app.id }) else { return }
-        // Entra à esquerda, alternando de lado, para não nascer em cima de outra fonte.
+        // Entra de um lado, alternando, para não nascer em cima de outra fonte.
         let angle: Float = scene.apps.count % 2 == 0 ? -60 : 60
         scene.apps.append(SourceSetting(id: app.id, name: app.name, angle: angle, distance: 1.5))
+        selectedID = app.id
     }
 
     func addNetworkSource(port: UInt16) {
         let id = "net:\(port)"
         guard !scene.apps.contains(where: { $0.id == id }) else { return }
         scene.apps.append(SourceSetting(id: id, name: "Rede \(port)", angle: -80, distance: 1.5))
+        selectedID = id
         if effectOn { session.start() }
         message = session.lastError
     }
 
-    func saveProfile(_ name: String) { scene.saveProfile(named: name); message = nil }
+    func removeApp(_ id: String) { scene.apps.removeAll { $0.id == id } }
+
+    // MARK: perfis
+
+    func saveProfile(_ name: String) { scene.saveProfile(named: name) }
     func applyProfile(_ name: String) { scene.applyProfile(named: name) }
     func deleteProfile(_ name: String) { scene.deleteProfile(named: name) }
 
-    func removeApp(_ id: String) { scene.apps.removeAll { $0.id == id } }
+    /// Perfil cujo conteúdo é idêntico ao estado atual (para marcar no menu).
+    var activeProfileName: String? {
+        scene.profiles.first {
+            $0.rest == scene.rest && $0.apps == scene.apps && $0.width == scene.width
+                && $0.reverbOn == scene.reverbOn && $0.reverbDB == scene.reverbDB && $0.algorithm == scene.algorithm
+        }?.name
+    }
+
+    // MARK: câmera
 
     func calibrate() { head.calibrate(); headStatus = "Centro recalibrado" }
+
+    // MARK: avisos
+
+    /// Quando a mensagem de erro aponta para uma permissão, a interface oferece o atalho para os Ajustes.
+    var permissionIssue: PermissionIssue? {
+        guard let message else { return nil }
+        if message.localizedCaseInsensitiveContains("câmera") && message.localizedCaseInsensitiveContains("permiss") { return .camera }
+        if message.localizedCaseInsensitiveContains("permiss") || message.localizedCaseInsensitiveContains("tap") { return .audio }
+        return nil
+    }
 
     // MARK: abrir no login
 

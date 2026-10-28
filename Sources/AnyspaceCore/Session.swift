@@ -144,6 +144,17 @@ public final class Session {
         return maxValue
     }
 
+    /// Nível recente (0...1) de cada fonte, e zera. Chamado pela interface ~10 vezes por segundo.
+    public func takeLevels() -> [String: Float] {
+        var levels: [String: Float] = [:]
+        for (id, tap) in taps {
+            levels[id] = tap.meter.pointee
+            tap.meter.pointee = 0
+        }
+        for (id, receiver) in receivers where levels[id] == nil { _ = receiver; levels[id] = 0 }
+        return levels
+    }
+
     // MARK: cena
 
     private func installVoice(_ id: String) {

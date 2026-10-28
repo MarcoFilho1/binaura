@@ -22,6 +22,8 @@ public final class TapCapture {
 
     /// Maior valor absoluto recente, para medidores e para saber se há som tocando.
     public let peak = UnsafeMutablePointer<Float>.allocate(capacity: 1)
+    /// Igual ao `peak`, mas zerado pela interface (10 vezes por segundo), para o medidor de cada fonte.
+    public let meter = UnsafeMutablePointer<Float>.allocate(capacity: 1)
 
     public init(target: Target, outputDevice: AudioObjectID, left: MonoRingBuffer, right: MonoRingBuffer, muteOriginal: Bool = true) {
         self.target = target
@@ -30,10 +32,11 @@ public final class TapCapture {
         self.left = left
         self.right = right
         peak.pointee = 0
+        meter.pointee = 0
     }
 
     deinit {
-        scratchL.deallocate(); scratchR.deallocate(); peak.deallocate()
+        scratchL.deallocate(); scratchR.deallocate(); peak.deallocate(); meter.deallocate()
     }
 
     /// Devolve uma mensagem de erro, ou nil se deu certo.
@@ -72,7 +75,7 @@ public final class TapCapture {
         status = AudioHardwareCreateAggregateDevice(aggregate as CFDictionary, &aggregateID)
         guard status == noErr else { stop(); return "criar dispositivo agregado (OSStatus \(status))" }
 
-        let (scratchL, scratchR, peak, left, right) = (self.scratchL, self.scratchR, self.peak, self.left, self.right)
+        let (scratchL, scratchR, peak, meter, left, right) = (self.scratchL, self.scratchR, self.peak, self.meter, self.left, self.right)
         status = AudioDeviceCreateIOProcIDWithBlock(&procID, aggregateID, nil) { _, inData, _, outData, _ in
             // O agregado também tem uma saída; ela fica muda (quem toca é o motor 3D).
             for buffer in UnsafeMutableAudioBufferListPointer(outData) {
@@ -90,6 +93,7 @@ public final class TapCapture {
                 maxValue = max(maxValue, abs(scratchL[i]), abs(scratchR[i]))
             }
             peak.pointee = max(peak.pointee, maxValue)
+            meter.pointee = max(meter.pointee, maxValue)
             left.write(scratchL, count: frames)
             right.write(scratchR, count: frames)
         }
