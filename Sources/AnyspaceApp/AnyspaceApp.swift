@@ -24,6 +24,13 @@ struct AnyspaceApp: App {
 
         MenuBarExtra("Anyspace", systemImage: model.effectOn ? "waveform.circle.fill" : "waveform.circle") {
             Toggle("Efeito espacial", isOn: Binding(get: { model.effectOn }, set: { model.setEffect($0) }))
+            if !model.scene.profiles.isEmpty {
+                Menu("Perfis") {
+                    ForEach(model.scene.profiles) { profile in
+                        Button(profile.name) { model.applyProfile(profile.name) }
+                    }
+                }
+            }
             Divider()
             OpenWindowButton()
             Button("Sair") { model.shutdown(); NSApplication.shared.terminate(nil) }

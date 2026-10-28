@@ -6,11 +6,13 @@ struct ControlsView: View {
     @Environment(\.openWindow) private var openWindow
     @State private var showBlindTest = false
     @State private var networkPort = "5004"
+    @State private var newProfileName = ""
 
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 18) {
                 header
+                profilesSection
                 sourcesSection
                 headSection
                 soundSection
@@ -33,6 +35,32 @@ struct ControlsView: View {
                 .toggleStyle(.switch).font(.headline)
             Text(model.effectOn ? "Saída: \(model.session.outputName)"
                                 : "Desligado: o som do Mac sai normalmente.")
+                .font(.caption).foregroundStyle(.secondary)
+        }
+    }
+
+    private var profilesSection: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text("Perfis").font(.headline)
+            HStack {
+                Menu("Aplicar perfil") {
+                    if model.scene.profiles.isEmpty { Text("Nenhum perfil salvo") }
+                    ForEach(model.scene.profiles) { profile in
+                        Button(profile.name) { model.applyProfile(profile.name) }
+                    }
+                }
+                Menu("Apagar perfil") {
+                    ForEach(model.scene.profiles) { profile in
+                        Button(profile.name, role: .destructive) { model.deleteProfile(profile.name) }
+                    }
+                }.disabled(model.scene.profiles.isEmpty)
+            }
+            HStack {
+                TextField("Nome (ex.: Trabalho, Filme)", text: $newProfileName)
+                Button("Salvar atual") { model.saveProfile(newProfileName); newProfileName = "" }
+                    .disabled(newProfileName.trimmingCharacters(in: .whitespaces).isEmpty)
+            }
+            Text("Guarda as posições, o volume, a abertura, a reverberação e o filtro. Salvar com um nome que já existe substitui o perfil.")
                 .font(.caption).foregroundStyle(.secondary)
         }
     }

@@ -14,6 +14,20 @@ public struct SourceSetting: Codable, Identifiable, Equatable {
     }
 }
 
+/// Um conjunto salvo de posições e ajustes de som (ex.: "Trabalho", "Filme").
+/// Não guarda câmera nem senha da rede, que são da máquina e não do ambiente.
+public struct SoundProfile: Codable, Equatable, Identifiable {
+    public var name: String
+    public var rest: SourceSetting
+    public var apps: [SourceSetting]
+    public var width: Float
+    public var reverbOn: Bool
+    public var reverbDB: Float
+    public var algorithm: String
+
+    public var id: String { name }
+}
+
 /// Tudo o que o usuário configura. Salvo em ~/Library/Application Support/Anyspace/scene.json.
 public struct SoundScene: Codable, Equatable {
     public static let restID = "rest"
@@ -30,8 +44,51 @@ public struct SoundScene: Codable, Equatable {
     public var invertHead = true
     /// Senha dos dispositivos que enviam áudio pela rede (fase 5).
     public var networkPassword = ""
+    public var profiles: [SoundProfile] = []
 
     public init() {}
+
+    private enum CodingKeys: String, CodingKey {
+        case rest, apps, width, reverbOn, reverbDB, algorithm, headTracking, cameraName, invertHead, networkPassword, profiles
+    }
+
+    /// Campos ausentes (arquivos de versões antigas) ficam com o valor padrão em vez de perder a cena inteira.
+    public init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        let d = SoundScene()
+        rest = try c.decodeIfPresent(SourceSetting.self, forKey: .rest) ?? d.rest
+        apps = try c.decodeIfPresent([SourceSetting].self, forKey: .apps) ?? d.apps
+        width = try c.decodeIfPresent(Float.self, forKey: .width) ?? d.width
+        reverbOn = try c.decodeIfPresent(Bool.self, forKey: .reverbOn) ?? d.reverbOn
+        reverbDB = try c.decodeIfPresent(Float.self, forKey: .reverbDB) ?? d.reverbDB
+        algorithm = try c.decodeIfPresent(String.self, forKey: .algorithm) ?? d.algorithm
+        headTracking = try c.decodeIfPresent(Bool.self, forKey: .headTracking) ?? d.headTracking
+        cameraName = try c.decodeIfPresent(String.self, forKey: .cameraName) ?? d.cameraName
+        invertHead = try c.decodeIfPresent(Bool.self, forKey: .invertHead) ?? d.invertHead
+        networkPassword = try c.decodeIfPresent(String.self, forKey: .networkPassword) ?? d.networkPassword
+        profiles = try c.decodeIfPresent([SoundProfile].self, forKey: .profiles) ?? d.profiles
+    }
+
+    // MARK: perfis
+
+    /// Salva o estado atual com esse nome (substitui um perfil de mesmo nome).
+    public mutating func saveProfile(named name: String) {
+        let trimmed = name.trimmingCharacters(in: .whitespaces)
+        guard !trimmed.isEmpty else { return }
+        let profile = SoundProfile(name: trimmed, rest: rest, apps: apps, width: width,
+                                   reverbOn: reverbOn, reverbDB: reverbDB, algorithm: algorithm)
+        if let i = profiles.firstIndex(where: { $0.name == trimmed }) { profiles[i] = profile } else { profiles.append(profile) }
+    }
+
+    @discardableResult
+    public mutating func applyProfile(named name: String) -> Bool {
+        guard let p = profiles.first(where: { $0.name == name }) else { return false }
+        rest = p.rest; apps = p.apps; width = p.width
+        reverbOn = p.reverbOn; reverbDB = p.reverbDB; algorithm = p.algorithm
+        return true
+    }
+
+    public mutating func deleteProfile(named name: String) { profiles.removeAll { $0.name == name } }
 
     public var all: [SourceSetting] { [rest] + apps }
 
