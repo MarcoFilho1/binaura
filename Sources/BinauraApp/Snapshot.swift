@@ -153,6 +153,22 @@ enum Snapshot {
         if let png = rep.representation(using: .png, properties: [:]) {
             try? png.write(to: URL(fileURLWithPath: "\(folder)/\(name).png"))
         }
+        // Segundo método: PDF da janela, que também pega listas e formulários com rolagem.
+        let pdf = frame.dataWithPDF(inside: frame.bounds)
+        if let image = NSImage(data: pdf) {
+            let scale: CGFloat = 2
+            let w = Int(frame.bounds.width * scale), h = Int(frame.bounds.height * scale)
+            if let out = NSBitmapImageRep(bitmapDataPlanes: nil, pixelsWide: w, pixelsHigh: h, bitsPerSample: 8, samplesPerPixel: 4,
+                                          hasAlpha: true, isPlanar: false, colorSpaceName: .deviceRGB, bytesPerRow: 0, bitsPerPixel: 0) {
+                NSGraphicsContext.saveGraphicsState()
+                NSGraphicsContext.current = NSGraphicsContext(bitmapImageRep: out)
+                image.draw(in: NSRect(x: 0, y: 0, width: w, height: h))
+                NSGraphicsContext.restoreGraphicsState()
+                if let png = out.representation(using: .png, properties: [:]) {
+                    try? png.write(to: URL(fileURLWithPath: "\(folder)/\(name)-pdf.png"))
+                }
+            }
+        }
         window.orderOut(nil)
     }
 }
