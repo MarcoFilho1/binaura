@@ -120,6 +120,10 @@ struct InspectorView: View {
     private var headSection: some View {
         Section {
             Toggle("Acompanhar a cabeça", isOn: $model.scene.headTracking)
+            if model.scene.headTracking && (model.cameraAccess == .denied || model.cameraAccess == .restricted) {
+                StatusLabel(text: "Erro: permissão da câmera")
+                Button("Abrir Ajustes da câmera…") { NSWorkspace.shared.open(PermissionIssue.camera.settingsURL) }
+            }
             if model.scene.headTracking {
                 Picker("Câmera", selection: $model.scene.cameraName) {
                     Text("Do Mac (padrão)").tag("")
@@ -187,7 +191,20 @@ struct InspectorView: View {
 
     private var advancedSection: some View {
         Section {
-            DisclosureGroup("Perfis e avançado", isExpanded: $showAdvanced) {
+            // Botão em vez de DisclosureGroup: o DisclosureGroup só abre ao clicar exatamente na seta.
+            Button { withAnimation(.snappy(duration: 0.2)) { showAdvanced.toggle() } } label: {
+                HStack {
+                    Text("Perfis e avançado")
+                    Spacer()
+                    Image(systemName: "chevron.right").font(.footnote.weight(.semibold)).foregroundStyle(.secondary)
+                        .rotationEffect(.degrees(showAdvanced ? 90 : 0))
+                }
+                .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+            .accessibilityValue(showAdvanced ? "expandido" : "recolhido")
+            .accessibilityHint("Mostra ou esconde perfis, rede e abrir ao iniciar")
+            if showAdvanced {
                 profilesBlock
                 networkBlock
                 Toggle("Abrir ao iniciar o Mac", isOn: Binding(get: { model.launchesAtLogin }, set: { model.setLaunchAtLogin($0) }))

@@ -41,7 +41,10 @@ final class AppModel: ObservableObject {
     @Published var faceBox: CGRect?
     @Published var levels: [String: Float] = [:]
     @Published var selectedID: String? = SoundScene.restID
-    @Published var debugCameraOpen = false { didSet { tick() } }
+    @Published var faceDetail: FaceDetail?
+    @Published var cameraAccess: AVAuthorizationStatus = HeadTracker.authorization
+    @Published var debugCameraOpen = false { didSet { head.setLandmarks(debugCameraOpen); tick() } }
+    private var requestingCamera = false
     @Published var outputName = ""
     @Published var showBlindTest = false
     /// Incrementa quando algo fora do palco seleciona uma fonte, para as setas do teclado passarem a valer.
@@ -73,6 +76,7 @@ final class AppModel: ObservableObject {
         }
         lastCamera = scene.cameraName
         lastInvert = scene.invertHead
+        lastHeadTracking = scene.headTracking
         headValue.setApply(scene.headTracking)
         outputName = session.outputName
         guard !isPreview else { return }
@@ -84,6 +88,14 @@ final class AppModel: ObservableObject {
         timers.append(Timer.scheduledTimer(withTimeInterval: 0.1, repeats: true) { [weak self] _ in
             Task { @MainActor in self?.refreshFast() }
         })
+        NotificationCenter.default.addObserver(forName: NSApplication.didBecomeActiveNotification, object: nil, queue: .main) { [weak self] _ in
+            Task { @MainActor in
+                guard let self else { return }
+                self.cameraAccess = HeadTracker.authorization
+                if self.cameraAccess == .authorized, self.message?.hasPrefix("Câmera: permissão") == true { self.message = nil }
+                self.tick()
+            }
+        }
         if startEffect { setEffect(true) }
         tick()
     }
@@ -126,15 +138,34 @@ final class AppModel: ObservableObject {
         let level = effectOn ? session.takePeak() : 0
         idleSeconds = level > 0.001 ? 0 : idleSeconds + 2
         let wantCamera = debugCameraOpen || (effectOn && scene.headTracking && idleSeconds < 10)
-        if wantCamera && !head.isRunning {
+        cameraAccess = HeadTracker.authorization
+        if wantCamera && !head.isRunning && cameraAccess == .notDetermined {
+            // Primeira vez: traz o app para a frente e pede a permissão agora, em vez de esperar o próximo ciclo.
+            guard !requestingCamera else { return }
+            requestingCamera = true
+            headStatus = "Responda ao pedido de acesso à câmera"
+            NSApp.activate(ignoringOtherApps: true)
+            AVCaptureDevice.requestAccess(for: .video) { [weak self] _ in
+                Task { @MainActor in
+                    self?.requestingCamera = false
+                    self?.cameraAccess = HeadTracker.authorization
+                    self?.tick()
+                }
+            }
+        } else if wantCamera && !head.isRunning && (cameraAccess == .denied || cameraAccess == .restricted) {
+            // Não adianta tentar de novo: só os Ajustes do Sistema resolvem. Mantém a escolha da pessoa ligada.
+            headStatus = "Erro: permissão da câmera"
+            if message == nil {
+                message = "Câmera: permissão negada. Libere o Anyspace em Ajustes do Sistema > Privacidade e Segurança > Câmera."
+            }
+        } else if wantCamera && !head.isRunning {
             headStatus = "Ligando a câmera…"
             head.start(cameraName: scene.cameraName, invert: scene.invertHead) { [weak self] error in
                 Task { @MainActor in
                     guard let self else { return }
                     if let error {
                         self.message = "Câmera: \(error)"
-                        self.headStatus = "Erro de câmera"
-                        self.scene.headTracking = false
+                        self.headStatus = "Erro: câmera indisponível"
                     } else {
                         self.headStatus = "Olhe para a tela por 2 s (calibrando)"
                     }
@@ -143,7 +174,7 @@ final class AppModel: ObservableObject {
         } else if !wantCamera && head.isRunning {
             head.stop()
             headStatus = scene.headTracking ? "Câmera pausada: sem som tocando" : "Rastreio desligado"
-            headRaw = nil; faceBox = nil
+            headRaw = nil; faceBox = nil; faceDetail = nil
         }
     }
 
@@ -157,6 +188,7 @@ final class AppModel: ObservableObject {
         let stats = head.takeStats()
         headRaw = stats.raw
         faceBox = stats.box
+        faceDetail = stats.detail
         if stats.frames > 0 {
             headStatus = stats.faces == 0 ? "Rosto não encontrado" : "Acompanhando a cabeça"
         }
@@ -164,8 +196,15 @@ final class AppModel: ObservableObject {
 
     // MARK: cena
 
+    private var lastHeadTracking = false
+
     private func sceneChanged() {
         guard !isPreview else { return }
+        if scene.headTracking != lastHeadTracking {
+            lastHeadTracking = scene.headTracking
+            if scene.headTracking { message = nil }   // um aviso antigo de câmera não vale mais
+            DispatchQueue.main.async { [weak self] in self?.tick() }
+        }
         session.setScene(scene)
         saveTask?.cancel()
         let snapshot = scene

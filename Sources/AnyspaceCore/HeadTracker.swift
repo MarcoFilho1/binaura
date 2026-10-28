@@ -8,11 +8,20 @@ public final class HeadTracker: NSObject, AVCaptureVideoDataOutputSampleBufferDe
     private let session = AVCaptureSession()
     private let boxLock = NSLock()
     private var box: CGRect?
+    private var currentDetail: FaceDetail?
+    private var landmarks = false
 
     /// Para mostrar a imagem da câmera na janela de depuração.
     public var previewSession: AVCaptureSession { session }
     /// Retângulo do rosto (0...1, origem embaixo à esquerda, imagem sem espelhar), ou nil.
     public var faceBox: CGRect? { boxLock.lock(); defer { boxLock.unlock() }; return box }
+    /// Pontos do rosto e olhar estimado (só quando a janela de depuração está aberta, porque custa mais processador).
+    public var faceDetail: FaceDetail? { boxLock.lock(); defer { boxLock.unlock() }; return currentDetail }
+    public func setLandmarks(_ on: Bool) { boxLock.lock(); landmarks = on; if !on { currentDetail = nil }; boxLock.unlock() }
+
+    /// Estado da permissão de câmera, para a interface explicar o problema antes de tentar ligar.
+    public static var authorization: AVAuthorizationStatus { AVCaptureDevice.authorizationStatus(for: .video) }
+
     private let queue = DispatchQueue(label: "anyspace.head")
     private let onYaw: (Float?) -> Void
     private let sign: Float
@@ -62,18 +71,74 @@ public final class HeadTracker: NSObject, AVCaptureVideoDataOutputSampleBufferDe
     public func stop() { session.stopRunning() }
 
     public func captureOutput(_ output: AVCaptureOutput, didOutput sampleBuffer: CMSampleBuffer, from connection: AVCaptureConnection) {
-        let request = VNDetectFaceRectanglesRequest()
-        request.revision = VNDetectFaceRectanglesRequestRevision3
+        boxLock.lock(); let wantLandmarks = landmarks; boxLock.unlock()
         let handler = VNImageRequestHandler(cmSampleBuffer: sampleBuffer, orientation: .up)
-        try? handler.perform([request])
 
-        // Com vários rostos, usa o maior (o mais perto da câmera).
-        let face = request.results?.max { $0.boundingBox.width < $1.boundingBox.width }
-        boxLock.lock(); box = face?.boundingBox; boxLock.unlock()
+        let face: VNFaceObservation?
+        if wantLandmarks {
+            let request = VNDetectFaceLandmarksRequest()
+            request.revision = VNDetectFaceLandmarksRequestRevision3
+            try? handler.perform([request])
+            // Com vários rostos, usa o maior (o mais perto da câmera).
+            face = request.results?.max { $0.boundingBox.width < $1.boundingBox.width }
+        } else {
+            let request = VNDetectFaceRectanglesRequest()
+            request.revision = VNDetectFaceRectanglesRequestRevision3
+            try? handler.perform([request])
+            face = request.results?.max { $0.boundingBox.width < $1.boundingBox.width }
+        }
+
+        boxLock.lock()
+        box = face?.boundingBox
+        currentDetail = wantLandmarks ? face.flatMap { makeDetail($0) } : nil
+        boxLock.unlock()
         if let yaw = face?.yaw?.floatValue {
             onYaw(sign * yaw * 180 / .pi)
         } else {
             onYaw(nil)
         }
+    }
+
+    private func makeDetail(_ face: VNFaceObservation) -> FaceDetail? {
+        guard let yawRad = face.yaw?.floatValue else { return nil }
+        let box = face.boundingBox
+        let yaw = sign * yawRad * 180 / .pi
+        let pitch = face.pitch.map { $0.floatValue * 180 / .pi }
+        let roll = face.roll.map { $0.floatValue * 180 / .pi }
+
+        func map(_ region: VNFaceLandmarkRegion2D?) -> [CGPoint] {
+            region?.normalizedPoints.map { CGPoint(x: box.minX + $0.x * box.width, y: box.minY + $0.y * box.height) } ?? []
+        }
+        let lm = face.landmarks
+        var contours: [FaceDetail.Contour] = []
+        for (name, points, closed) in [
+            ("contorno", map(lm?.faceContour), false), ("sobrancelha esq", map(lm?.leftEyebrow), false),
+            ("sobrancelha dir", map(lm?.rightEyebrow), false), ("olho esq", map(lm?.leftEye), true),
+            ("olho dir", map(lm?.rightEye), true), ("nariz", map(lm?.noseCrest), false),
+            ("lábios", map(lm?.outerLips), true),
+        ] where !points.isEmpty { contours.append(.init(name: name, points: points, closed: closed)) }
+
+        let leftPupil = map(lm?.leftPupil).first, rightPupil = map(lm?.rightPupil).first
+        let pupils = [leftPupil, rightPupil].compactMap { $0 }
+
+        // Olhar: a posição da pupila dentro do olho, somada à direção da cabeça.
+        func offset(eye: [CGPoint], pupil: CGPoint?) -> (x: Float, y: Float)? {
+            guard let pupil, eye.count >= 4 else { return nil }
+            let xs = eye.map(\.x), ys = eye.map(\.y)
+            let width = (xs.max()! - xs.min()!), height = max(ys.max()! - ys.min()!, width * 0.3)
+            guard width > 0 else { return nil }
+            return (Float((pupil.x - (xs.max()! + xs.min()!) / 2) / width), Float((pupil.y - (ys.max()! + ys.min()!) / 2) / height))
+        }
+        let offsets = [offset(eye: map(lm?.leftEye), pupil: leftPupil), offset(eye: map(lm?.rightEye), pupil: rightPupil)].compactMap { $0 }
+        var gazeYaw: Float?, gazePitch: Float?
+        if !offsets.isEmpty {
+            let ox = offsets.map(\.x).reduce(0, +) / Float(offsets.count)
+            let oy = offsets.map(\.y).reduce(0, +) / Float(offsets.count)
+            // Na imagem da câmera (sem espelho) olhar para a direita da pessoa move a pupila para a esquerda da imagem.
+            gazeYaw = yaw + (-ox) * 50
+            gazePitch = (pitch ?? 0) + oy * 40
+        }
+        return FaceDetail(box: box, yaw: yaw, pitch: pitch, roll: roll, contours: contours,
+                          pupils: pupils, gazeYaw: gazeYaw, gazePitch: gazePitch)
     }
 }

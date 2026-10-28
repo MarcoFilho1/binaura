@@ -255,6 +255,11 @@ do {
     expect(SoundScene().invertHead, "sentido da cabeça padrão é o invertido")
 }
 
+print("\nOlhar na tela")
+expect(screenPoint(gazeYaw: 0, gazePitch: 0) == (0, 0), "olhar à frente = centro da tela")
+expect(screenPoint(gazeYaw: 15, gazePitch: 0).x == 0.5 && screenPoint(gazeYaw: -15, gazePitch: 0).x == -0.5, "15° à direita = meio caminho para a direita")
+expect(screenPoint(gazeYaw: 90, gazePitch: -90) == (1, -1), "olhar muito fora encosta na borda")
+
 print("\nFiltro da cabeça")
 let dt: Float = 0.05
 var step = HeadFilter()
