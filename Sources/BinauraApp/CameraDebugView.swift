@@ -13,15 +13,6 @@ struct CameraDebugView: View {
                 ZStack {
                     CameraPreview(session: model.previewSession)
                     FaceOverlay(detail: model.faceDetail)
-                    GeometryReader { geo in
-                        if let box = model.faceBox {
-                            // A imagem é mostrada espelhada, então o x inverte.
-                            RoundedRectangle(cornerRadius: 6, style: .continuous)
-                                .strokeBorder(Color.green, lineWidth: 2)
-                                .frame(width: box.width * geo.size.width, height: box.height * geo.size.height)
-                                .position(x: (1 - box.midX) * geo.size.width, y: (1 - box.midY) * geo.size.height)
-                        }
-                    }
                     if model.previewSession == nil {
                         VStack(spacing: Space.s) {
                             if model.headStatus.hasPrefix("Erro") || model.message != nil {
@@ -115,18 +106,6 @@ struct FaceOverlay: View {
                 let c = point(p)
                 ctx.fill(Path(ellipseIn: CGRect(x: c.x - 3.6, y: c.y - 3.6, width: 7.2, height: 7.2)), with: .color(.black.opacity(0.35)))
                 ctx.fill(Path(ellipseIn: CGRect(x: c.x - 2.6, y: c.y - 2.6, width: 5.2, height: 5.2)), with: .color(.white))
-            }
-            // Seta do olhar a partir do ponto médio das pupilas (ou do centro do rosto).
-            if let gy = d.gazeYaw, let gp = d.gazePitch {
-                let origin = d.pupils.isEmpty ? point(CGPoint(x: d.box.midX, y: d.box.midY))
-                    : point(CGPoint(x: d.pupils.map(\.x).reduce(0, +) / CGFloat(d.pupils.count),
-                                    y: d.pupils.map(\.y).reduce(0, +) / CGFloat(d.pupils.count)))
-                let target = CGPoint(x: origin.x + CGFloat(max(-45, min(45, gy))) * 2.2,
-                                     y: origin.y - CGFloat(max(-30, min(30, gp))) * 2.2)
-                var arrow = Path()
-                arrow.move(to: origin); arrow.addLine(to: target)
-                ctx.stroke(arrow, with: .color(.yellow), style: StrokeStyle(lineWidth: 2.5, lineCap: .round))
-                ctx.fill(Path(ellipseIn: CGRect(x: target.x - 5, y: target.y - 5, width: 10, height: 10)), with: .color(.yellow))
             }
         }
         .allowsHitTesting(false)
