@@ -24,31 +24,37 @@ struct InspectorView: View {
 
     private var sourcesSection: some View {
         Section {
-            ForEach(model.scene.all) { source in
-                let selected = source.id == model.selectedID
-                HStack(spacing: Space.s) {
-                    Button { model.selectedID = source.id } label: {
-                        HStack(spacing: Space.m) {
-                            SourceIconView(id: source.id, size: 24)
-                            Text(source.name).lineLimit(1)
-                            Spacer()
+            ScrollView {
+                VStack(spacing: 2) {
+                ForEach(model.scene.all) { source in
+                    let selected = source.id == model.selectedID
+                    HStack(spacing: Space.s) {
+                        Button { model.selectedID = source.id } label: {
+                            HStack(spacing: Space.m) {
+                                SourceIconView(id: source.id, size: 24)
+                                Text(source.name).lineLimit(1)
+                                Spacer()
+                            }
+                            .contentShape(Rectangle())
                         }
-                        .contentShape(Rectangle())
+                        .buttonStyle(.plain)
+                        .accessibilityAddTraits(selected ? .isSelected : [])
+                        .accessibilityHint("Seleciona a fonte para ajustar")
+                        Button { model.update(source.id) { $0.muted.toggle() } } label: {
+                            Image(systemName: source.muted ? "speaker.slash.fill" : "speaker.wave.2.fill")
+                                .foregroundStyle(source.muted ? Color.secondary : Color.primary)
+                                .frame(width: 20)
+                        }
+                        .buttonStyle(.borderless)
+                        .help(source.muted ? "Reativar o som" : "Silenciar")
+                        .accessibilityLabel(source.muted ? "Reativar \(source.name)" : "Silenciar \(source.name)")
                     }
-                    .buttonStyle(.plain)
-                    .accessibilityAddTraits(selected ? .isSelected : [])
-                    .accessibilityHint("Seleciona a fonte para ajustar")
-                    Button { model.update(source.id) { $0.muted.toggle() } } label: {
-                        Image(systemName: source.muted ? "speaker.slash.fill" : "speaker.wave.2.fill")
-                            .foregroundStyle(source.muted ? Color.secondary : Color.primary)
-                            .frame(width: 20)
-                    }
-                    .buttonStyle(.borderless)
-                    .help(source.muted ? "Reativar o som" : "Silenciar")
-                    .accessibilityLabel(source.muted ? "Reativar \(source.name)" : "Silenciar \(source.name)")
+                    .padding(.horizontal, Space.s).padding(.vertical, 2)
+                    .background(selected ? Color.accentColor.opacity(0.16) : Color.clear, in: RoundedRectangle(cornerRadius: 6, style: .continuous))
                 }
-                .listRowBackground(selected ? Color.accentColor.opacity(0.16) : Color.clear)
+                }
             }
+            .frame(maxHeight: 220)
             let candidates = model.availableApps.filter { app in !model.scene.apps.contains { $0.id == app.id } }
             Menu {
                 if candidates.isEmpty { Text("Nenhum app com áudio aberto") }

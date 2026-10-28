@@ -44,6 +44,8 @@ final class AppModel: ObservableObject {
     @Published var debugCameraOpen = false { didSet { tick() } }
     @Published var outputName = ""
     @Published var showBlindTest = false
+    /// Incrementa quando algo fora do palco seleciona uma fonte, para as setas do teclado passarem a valer.
+    @Published var stageFocusRequest = 0
 
     let session: Session
     let isPreview: Bool

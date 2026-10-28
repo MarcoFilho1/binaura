@@ -40,7 +40,7 @@ struct AnyspaceApp: App {
         } label: {
             Image(systemName: model.message != nil && !model.effectOn ? "exclamationmark.triangle.fill"
                   : (model.effectOn ? "waveform.circle.fill" : "waveform.circle"))
-                .accessibilityLabel(model.effectOn ? "Anyspace, efeito ligado" : "Anyspace, efeito desligado")
+                .accessibilityLabel("Anyspace, efeito \(model.effectOn ? "ligado" : "desligado")\(model.message != nil ? ", com aviso" : "")")
         }
         .menuBarExtraStyle(.window)
     }

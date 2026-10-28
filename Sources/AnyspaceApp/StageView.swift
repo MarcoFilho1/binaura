@@ -14,7 +14,7 @@ struct StageView: View {
             // Reserva espaço para o aviso (em cima) e a faixa de "desligado" (embaixo), para nada cobrir o mapa,
             // e margem lateral para os rótulos Esquerda/Direita.
             let top: CGFloat = model.message == nil ? 0 : (model.permissionIssue == nil ? 64 : 84)
-            let bottom: CGFloat = 84   // fixo: ligar/desligar não muda o tamanho do mapa
+            let bottom: CGFloat = 108   // fixo: ligar/desligar não muda o tamanho do mapa
             let radius = max(80, min(geo.size.width / 2 - 84, (geo.size.height - top - bottom) / 2 - 40))
             let center = CGPoint(x: geo.size.width / 2, y: top + (geo.size.height - top - bottom) / 2 + 6)
             ZStack {
@@ -38,8 +38,10 @@ struct StageView: View {
             .overlay(alignment: .top) { notice.padding([.horizontal, .top], Space.l) }
             .overlay(alignment: .bottom) {
                 if model.effectOn {
-                    Text("Arraste uma fonte para mudar de lugar, ou selecione e use as setas do teclado.")
-                        .font(.system(size: 12)).foregroundStyle(.secondary).padding(.bottom, Space.l)
+                    Text(focused ? "Setas: esquerda e direita giram a fonte, cima e baixo a aproximam ou afastam."
+                                 : "Arraste uma fonte para mudar de lugar, ou selecione e use as setas do teclado.")
+                        .font(.system(size: 12)).foregroundStyle(focused ? Color.primary : Color.secondary)
+                        .padding(.bottom, Space.l)
                 } else {
                     OffState().padding(Space.l)
                 }
@@ -51,6 +53,14 @@ struct StageView: View {
         .focusable()
         .focused($focused)
         .focusEffectDisabled()
+        .overlay {
+            if focused {
+                RoundedRectangle(cornerRadius: 6, style: .continuous)
+                    .strokeBorder(Color.accentColor.opacity(0.6), lineWidth: 2)
+                    .padding(3).allowsHitTesting(false)
+            }
+        }
+        .onChange(of: model.stageFocusRequest) { _, _ in focused = true }
         .onKeyPress(.leftArrow) { nudge(angle: -5) }
         .onKeyPress(.rightArrow) { nudge(angle: 5) }
         .onKeyPress(.upArrow) { nudge(distance: -0.25) }
@@ -127,7 +137,7 @@ private struct Grid2D: View {
 
             ForEach(1...4, id: \.self) { meter in
                 let r = radius * CGFloat(meter) / CGFloat(metersPerRadius)
-                let spot = MapGeometry.point(angle: 45, distance: Float(meter), metersPerRadius: metersPerRadius, radiusPixels: Double(radius))
+                let spot = MapGeometry.point(angle: 135, distance: Float(meter), metersPerRadius: metersPerRadius, radiusPixels: Double(radius))
                 Text("\(meter) m")
                     .font(.system(size: 11).monospacedDigit()).foregroundStyle(.secondary)
                     .padding(.horizontal, 3)
@@ -250,16 +260,16 @@ private struct SourceDisc: View {
         let level = CGFloat(min(1, (model.levels[source.id] ?? 0) * 3))
         VStack(spacing: Space.xs) {
             ZStack {
+                Circle().fill(.background).frame(width: 48, height: 48)
+                    .shadow(color: .black.opacity(0.22), radius: 6, y: 2)
                 if !source.muted {
-                    // Com "reduzir movimento" o anel só muda de opacidade, sem escala nem animação.
-                    Circle().stroke(Color.accentColor.opacity(0.5), lineWidth: 2)
-                        .frame(width: 46, height: 46)
-                        .scaleEffect(reduceMotion ? 1 : 1 + level * 0.5)
+                    // O anel fica fora do disco (60 pt). Com "reduzir movimento" só muda de opacidade, sem escala.
+                    Circle().stroke(Color.accentColor.opacity(0.55), lineWidth: 2.5)
+                        .frame(width: 60, height: 60)
+                        .scaleEffect(reduceMotion ? 1 : 1 + level * 0.25)
                         .opacity(Double(level))
                         .animation(reduceMotion ? nil : .easeOut(duration: 0.12), value: level)
                 }
-                Circle().fill(.background).frame(width: 48, height: 48)
-                    .shadow(color: .black.opacity(0.22), radius: 6, y: 2)
                 SourceIconView(id: source.id, size: 36)
                     .grayscale(source.muted ? 1 : 0)
                     .opacity(source.muted ? 0.55 : 1)

@@ -80,3 +80,16 @@ Verificação offline já passou: salvar, aplicar, substituir, apagar, guardar e
 - [ ] Mude tudo, crie "Filme" com outro arranjo e use "Aplicar perfil": as posições voltam exatamente?
 - [ ] O menu da barra de menu lista os perfis e troca de perfil?
 - [ ] Feche com Cmd+Q e reabra: os perfis continuam lá?
+
+## Interface nativa nova (aguardando você)
+Rode: `pkill -x Anyspace; sleep 1; open ~/anyspace/build/Anyspace.app`. Na primeira vez as boas-vindas aparecem e o efeito só liga em "Ligar e começar". Para vê-las de novo: `defaults delete dev.marco.anyspace didSeeWelcome`.
+
+O revisor independente conferiu o palco, o painel da barra de menu, as boas-vindas, o teste cego e o estado desligado/erro por captura. **O inspetor, a janela de câmera e o menu Perfis não puderam ser capturados** (formulários com rolagem), então confira estes com os seus olhos:
+- [ ] Inspetor: com 1 app e com 6+ apps, a lista de fontes não colapsa nem tem rolagem estranha, e o detalhe da fonte selecionada fica visível?
+- [ ] "Direção" e "Distância": digitar e usar o Stepper move a bolinha no palco?
+- [ ] Modo escuro com a janela ativa: o interruptor e os botões da toolbar mostram os símbolos (e não pílulas brancas vazias)?
+- [ ] Setas do teclado movem a fonte selecionada; aparece o contorno de foco do palco?
+- [ ] Janela de câmera: retângulo do rosto, medidor, e a mensagem de erro se a permissão da câmera for negada.
+- [ ] Barra de menu: trocar de perfil, volume por fonte, "Dispensar" no aviso.
+- [ ] VoiceOver: as bolinhas do mapa leem nome, direção e distância?
+- [ ] Com "Reduzir movimento" ligado nos Ajustes do Sistema, o anel de nível continua visível (só muda de opacidade)?

@@ -12,10 +12,17 @@ struct MenuBarPanel: View {
             header
             if let message = model.message {
                 VStack(alignment: .leading, spacing: Space.s) {
-                    Label(message, systemImage: "exclamationmark.triangle.fill")
-                        .font(.callout).foregroundStyle(.orange).fixedSize(horizontal: false, vertical: true)
-                    if let issue = model.permissionIssue {
-                        Button("Abrir Ajustes…") { NSWorkspace.shared.open(issue.settingsURL) }
+                    Label {
+                        Text(message).foregroundStyle(.primary)
+                    } icon: {
+                        Image(systemName: "exclamationmark.triangle.fill").foregroundStyle(.orange)
+                    }
+                    .font(.callout).fixedSize(horizontal: false, vertical: true)
+                    HStack {
+                        if let issue = model.permissionIssue {
+                            Button("Abrir Ajustes…") { NSWorkspace.shared.open(issue.settingsURL) }
+                        }
+                        Button("Dispensar") { model.message = nil }
                     }
                 }
             }
@@ -55,7 +62,7 @@ struct MenuBarPanel: View {
         VStack(alignment: .leading, spacing: 2) {
             Text("Perfil").font(.caption).foregroundStyle(.secondary)
             ForEach(model.scene.profiles) { profile in
-                MenuRow(title: profile.name, shortcut: model.activeProfileName == profile.name ? "✓" : nil) {
+                MenuRow(title: profile.name, checked: model.activeProfileName == profile.name) {
                     model.applyProfile(profile.name)
                 }
             }

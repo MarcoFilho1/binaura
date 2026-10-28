@@ -81,33 +81,41 @@ struct StatusLabel: View {
     }
 
     var body: some View {
-        Label(text, systemImage: style.symbol)
-            .foregroundStyle(style.color == .secondary ? Color.secondary : style.color)
-            .labelStyle(.titleAndIcon)
+        Label {
+            Text(text).foregroundStyle(.secondary)
+        } icon: {
+            Image(systemName: style.symbol).foregroundStyle(style.color)
+        }
+        .labelStyle(.titleAndIcon)
     }
 }
 
-/// Linha de menu com destaque ao passar o mouse e ao receber foco, como um item de menu nativo.
+/// Linha de menu com destaque ao passar o mouse e ao receber foco do teclado, como um item de menu nativo.
 struct MenuRow: View {
     let title: String
     var shortcut: String?
+    var checked = false
     let action: () -> Void
     @State private var hovering = false
+    @FocusState private var focused: Bool
 
     var body: some View {
         Button(action: action) {
             HStack {
                 Text(title)
                 Spacer()
+                if checked { Image(systemName: "checkmark").foregroundStyle(Color.accentColor) }
                 if let shortcut { Text(shortcut).foregroundStyle(.secondary) }
             }
             .padding(.horizontal, Space.s).padding(.vertical, 4)
             .frame(maxWidth: .infinity, alignment: .leading)
-            .background(hovering ? Color.accentColor.opacity(0.18) : Color.clear,
+            .background(hovering || focused ? Color.accentColor.opacity(0.18) : Color.clear,
                         in: RoundedRectangle(cornerRadius: 6, style: .continuous))
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
+        .focused($focused)
         .onHover { hovering = $0 }
+        .accessibilityAddTraits(checked ? .isSelected : [])
     }
 }
