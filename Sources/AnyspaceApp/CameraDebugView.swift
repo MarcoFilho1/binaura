@@ -22,9 +22,19 @@ struct CameraDebugView: View {
                     }
                     if model.previewSession == nil {
                         VStack(spacing: Space.s) {
-                            ProgressView().controlSize(.small)
-                            Text("Ligando a câmera…").font(.callout).foregroundStyle(.white.opacity(0.8))
+                            if model.headStatus.hasPrefix("Erro") || model.message != nil {
+                                Image(systemName: "video.slash.fill").font(.title).foregroundStyle(.white.opacity(0.8))
+                                Text(model.message ?? model.headStatus).font(.callout)
+                                    .foregroundStyle(.white.opacity(0.9)).multilineTextAlignment(.center)
+                                if model.permissionIssue == .camera {
+                                    Button("Abrir Ajustes…") { NSWorkspace.shared.open(PermissionIssue.camera.settingsURL) }
+                                }
+                            } else {
+                                ProgressView().controlSize(.small)
+                                Text("Ligando a câmera…").font(.callout).foregroundStyle(.white.opacity(0.8))
+                            }
                         }
+                        .padding(Space.l)
                     }
                 }
                 .aspectRatio(4 / 3, contentMode: .fit)
@@ -41,7 +51,7 @@ struct CameraDebugView: View {
                     ForEach(model.cameras, id: \.self) { Text($0).tag($0) }
                 }
                 Toggle("Inverter o sentido", isOn: $model.scene.invertHead)
-                LabeledContent("Estado") { Text(model.headStatus).foregroundStyle(.secondary) }
+                LabeledContent("Estado") { StatusLabel(text: model.headStatus) }
                 Button("Calibrar centro") { model.calibrate() }
             } footer: {
                 Text("Olhe para a tela e clique em “Calibrar centro”. Vire a cabeça para a direita: o ângulo deve ficar positivo e o retângulo verde deve acompanhar o rosto. Esta janela não gira o som; para isso ligue “Acompanhar a cabeça”.")

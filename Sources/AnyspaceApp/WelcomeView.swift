@@ -21,7 +21,7 @@ struct WelcomeView: View {
                 step("camera", "A câmera é opcional", "Se quiser que o espaço fique parado quando você vira a cabeça, ligue “Acompanhar a cabeça”. Ela só funciona com som tocando.")
                 step("power", "Desligar devolve o som normal", "O interruptor no topo da janela e na barra de menu desfaz tudo na hora.")
             }
-            Button("Começar", action: done)
+            Button("Ligar e começar", action: done)
                 .buttonStyle(.borderedProminent).controlSize(.large).keyboardShortcut(.defaultAction)
         }
         .padding(Space.xl * 1.5)

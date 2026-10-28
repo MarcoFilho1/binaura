@@ -15,9 +15,7 @@ struct InspectorView: View {
             if let id = model.selectedID, let source = model.source(id) { detailSection(source) }
             headSection
             soundSection
-            profilesSection
-            networkSection
-            generalSection
+            advancedSection
         }
         .formStyle(.grouped)
     }
@@ -28,10 +26,18 @@ struct InspectorView: View {
         Section {
             ForEach(model.scene.all) { source in
                 let selected = source.id == model.selectedID
-                HStack(spacing: Space.m) {
-                    SourceIconView(id: source.id, size: 24)
-                    Text(source.name).lineLimit(1)
-                    Spacer()
+                HStack(spacing: Space.s) {
+                    Button { model.selectedID = source.id } label: {
+                        HStack(spacing: Space.m) {
+                            SourceIconView(id: source.id, size: 24)
+                            Text(source.name).lineLimit(1)
+                            Spacer()
+                        }
+                        .contentShape(Rectangle())
+                    }
+                    .buttonStyle(.plain)
+                    .accessibilityAddTraits(selected ? .isSelected : [])
+                    .accessibilityHint("Seleciona a fonte para ajustar")
                     Button { model.update(source.id) { $0.muted.toggle() } } label: {
                         Image(systemName: source.muted ? "speaker.slash.fill" : "speaker.wave.2.fill")
                             .foregroundStyle(source.muted ? Color.secondary : Color.primary)
@@ -41,11 +47,7 @@ struct InspectorView: View {
                     .help(source.muted ? "Reativar o som" : "Silenciar")
                     .accessibilityLabel(source.muted ? "Reativar \(source.name)" : "Silenciar \(source.name)")
                 }
-                .contentShape(Rectangle())
-                .onTapGesture { model.selectedID = source.id }
                 .listRowBackground(selected ? Color.accentColor.opacity(0.16) : Color.clear)
-                .accessibilityElement(children: .combine)
-                .accessibilityAddTraits(selected ? [.isButton, .isSelected] : .isButton)
             }
             let candidates = model.availableApps.filter { app in !model.scene.apps.contains { $0.id == app.id } }
             Menu {
@@ -68,7 +70,7 @@ struct InspectorView: View {
     }
 
     private func detailSection(_ source: SourceSetting) -> some View {
-        Section(source.name) {
+        Section {
             Slider(value: Binding(get: { source.volume }, set: { v in model.update(source.id) { $0.volume = v } }), in: 0...1) {
                 Text("Volume")
             } minimumValueLabel: {
@@ -86,7 +88,7 @@ struct InspectorView: View {
                             in: -180...180, step: 5).labelsHidden()
                 }
             }
-            .help("0° é à frente, 90° à direita, -90° à esquerda e 180° atrás.")
+
             LabeledContent("Distância") {
                 HStack(spacing: Space.xs) {
                     TextField("Distância", value: Binding(get: { Double(source.distance) }, set: { v in model.update(source.id) { $0.distance = Float(min(max(v, 0.5), 4)) } }),
@@ -100,6 +102,10 @@ struct InspectorView: View {
             if source.id != SoundScene.restID {
                 Button("Remover do mapa", role: .destructive) { model.removeApp(source.id) }
             }
+        } header: {
+            Text(source.name)
+        } footer: {
+            Text("Direção: 0° é à frente, 90° à direita, -90° à esquerda e 180° atrás. Distância de 0,5 a 4 m.")
         }
     }
 
@@ -116,9 +122,7 @@ struct InspectorView: View {
                 LabeledContent("Ângulo") {
                     Text(String(format: "%+.0f°", model.headAngle)).monospacedDigit()
                 }
-                LabeledContent("Estado") {
-                    Text(model.headStatus).foregroundStyle(.secondary).multilineTextAlignment(.trailing)
-                }
+                LabeledContent("Estado") { StatusLabel(text: model.headStatus) }
                 HStack {
                     Button("Calibrar centro") { model.calibrate() }
                     Button("Câmera de debug…") { openWindow(id: "camera") }
@@ -138,14 +142,14 @@ struct InspectorView: View {
         Section {
             LabeledContent("Abertura do estéreo") {
                 HStack {
-                    Slider(value: $model.scene.width, in: 0...60).frame(width: 110).labelsHidden()
+                    Slider(value: $model.scene.width, in: 0...60) { Text("Abertura do estéreo") }.frame(minWidth: 90, maxWidth: 140)
                     Text("\(Int(model.scene.width))°").monospacedDigit().frame(width: 34, alignment: .trailing)
                 }
             }
             Toggle("Reverberação de sala", isOn: $model.scene.reverbOn)
             if model.scene.reverbOn {
                 LabeledContent("Intensidade") {
-                    Slider(value: $model.scene.reverbDB, in: -40...0).frame(width: 140).labelsHidden()
+                    Slider(value: $model.scene.reverbDB, in: -40...0) { Text("Intensidade da reverberação") }.frame(minWidth: 90, maxWidth: 160)
                 }
             }
             Picker("Filtro de direção", selection: $model.scene.algorithm) {
@@ -171,10 +175,23 @@ struct InspectorView: View {
         }
     }
 
-    // MARK: perfis
+    // MARK: avançado (perfis, rede, abrir no login)
 
-    private var profilesSection: some View {
+    @State private var showAdvanced = false
+
+    private var advancedSection: some View {
         Section {
+            DisclosureGroup("Perfis e avançado", isExpanded: $showAdvanced) {
+                profilesBlock
+                networkBlock
+                Toggle("Abrir ao iniciar o Mac", isOn: Binding(get: { model.launchesAtLogin }, set: { model.setLaunchAtLogin($0) }))
+            }
+        }
+    }
+
+    private var profilesBlock: some View {
+        VStack(alignment: .leading, spacing: Space.s) {
+            Text("Perfis").font(.headline)
             ForEach(model.scene.profiles) { profile in
                 HStack {
                     Button { model.applyProfile(profile.name) } label: {
@@ -196,10 +213,8 @@ struct InspectorView: View {
                 Button("Salvar atual", action: saveProfile)
                     .disabled(newProfileName.trimmingCharacters(in: .whitespaces).isEmpty)
             }
-        } header: {
-            Text("Perfis")
-        } footer: {
-            Text("Guarda posições, volumes, abertura, reverberação e filtro. Um nome que já existe é substituído.")
+            Text("Guarda posições, volumes, abertura, reverberação e filtro. Também no menu Perfis da barra de ferramentas.")
+                .font(.caption).foregroundStyle(.secondary)
         }
     }
 
@@ -208,28 +223,20 @@ struct InspectorView: View {
         newProfileName = ""
     }
 
-    // MARK: rede
-
-    private var networkSection: some View {
-        Section {
-            DisclosureGroup("Outro dispositivo (rede local)", isExpanded: $showNetwork) {
-                SecureField("Senha", text: $model.scene.networkPassword)
-                HStack {
-                    TextField("Porta", text: $networkPort).frame(width: 70)
-                    Button("Receber áudio nessa porta") {
-                        if let port = UInt16(networkPort) { model.addNetworkSource(port: port) }
-                    }
-                    .disabled(model.scene.networkPassword.isEmpty || UInt16(networkPort) == nil)
+    private var networkBlock: some View {
+        VStack(alignment: .leading, spacing: Space.s) {
+            Text("Outro dispositivo (rede local)").font(.headline)
+            SecureField("Senha", text: $model.scene.networkPassword)
+            HStack {
+                TextField("Porta", text: $networkPort, prompt: Text("Porta")).frame(width: 70)
+                    .accessibilityLabel("Porta de rede")
+                Button("Receber áudio nessa porta") {
+                    if let port = UInt16(networkPort) { model.addNetworkSource(port: port) }
                 }
-                Text("No outro Mac: AnyspaceCLI --send IP:PORTA --password SENHA. Sem criptografia: use só em rede de confiança.")
-                    .font(.caption).foregroundStyle(.secondary)
+                .disabled(model.scene.networkPassword.isEmpty || UInt16(networkPort) == nil)
             }
-        }
-    }
-
-    private var generalSection: some View {
-        Section {
-            Toggle("Abrir ao iniciar o Mac", isOn: Binding(get: { model.launchesAtLogin }, set: { model.setLaunchAtLogin($0) }))
+            Text("No outro Mac: AnyspaceCLI --send IP:PORTA --password SENHA. Sem criptografia: use só em rede de confiança.")
+                .font(.caption).foregroundStyle(.secondary)
         }
     }
 }

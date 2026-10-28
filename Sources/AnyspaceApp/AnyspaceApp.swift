@@ -17,7 +17,7 @@ enum Launcher {
 }
 
 struct AnyspaceApp: App {
-    @StateObject private var model = AppModel(startEffect: !CommandLine.arguments.contains("--no-start"))
+    @StateObject private var model = AppModel(startEffect: !CommandLine.arguments.contains("--no-start") && UserDefaults.standard.bool(forKey: "didSeeWelcome"))
 
     var body: some Scene {
         Window("Anyspace", id: "main") {
@@ -38,7 +38,9 @@ struct AnyspaceApp: App {
         MenuBarExtra {
             MenuBarPanel().environmentObject(model)
         } label: {
-            Image(systemName: model.effectOn ? "waveform.circle.fill" : "waveform.circle")
+            Image(systemName: model.message != nil && !model.effectOn ? "exclamationmark.triangle.fill"
+                  : (model.effectOn ? "waveform.circle.fill" : "waveform.circle"))
+                .accessibilityLabel(model.effectOn ? "Anyspace, efeito ligado" : "Anyspace, efeito desligado")
         }
         .menuBarExtraStyle(.window)
     }

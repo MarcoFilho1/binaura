@@ -10,10 +10,18 @@ struct MenuBarPanel: View {
     var body: some View {
         VStack(alignment: .leading, spacing: Space.m) {
             header
+            if let message = model.message {
+                VStack(alignment: .leading, spacing: Space.s) {
+                    Label(message, systemImage: "exclamationmark.triangle.fill")
+                        .font(.callout).foregroundStyle(.orange).fixedSize(horizontal: false, vertical: true)
+                    if let issue = model.permissionIssue {
+                        Button("Abrir Ajustes…") { NSWorkspace.shared.open(issue.settingsURL) }
+                    }
+                }
+            }
             if model.effectOn {
                 if model.scene.headTracking {
-                    Label(model.headStatus, systemImage: "person.fill.viewfinder")
-                        .font(.caption).foregroundStyle(.secondary).lineLimit(1)
+                    StatusLabel(text: model.headStatus).font(.caption).lineLimit(1)
                 }
                 if !model.scene.profiles.isEmpty { profiles }
                 sources
@@ -47,16 +55,9 @@ struct MenuBarPanel: View {
         VStack(alignment: .leading, spacing: 2) {
             Text("Perfil").font(.caption).foregroundStyle(.secondary)
             ForEach(model.scene.profiles) { profile in
-                Button { model.applyProfile(profile.name) } label: {
-                    HStack {
-                        Image(systemName: "checkmark").opacity(model.activeProfileName == profile.name ? 1 : 0)
-                            .frame(width: 16)
-                        Text(profile.name)
-                        Spacer()
-                    }
-                    .padding(.vertical, 3).contentShape(Rectangle())
+                MenuRow(title: profile.name, shortcut: model.activeProfileName == profile.name ? "✓" : nil) {
+                    model.applyProfile(profile.name)
                 }
-                .buttonStyle(.plain)
             }
         }
     }
@@ -84,18 +85,17 @@ struct MenuBarPanel: View {
     }
 
     private var footer: some View {
-        VStack(alignment: .leading, spacing: 2) {
-            Button("Abrir Anyspace…") {
+        VStack(alignment: .leading, spacing: 0) {
+            MenuRow(title: "Abrir Anyspace…", shortcut: "⌘O") {
                 openWindow(id: "main")
                 NSApplication.shared.activate(ignoringOtherApps: true)
             }
             .keyboardShortcut("o")
-            Button("Sair do Anyspace") {
+            MenuRow(title: "Sair do Anyspace", shortcut: "⌘Q") {
                 model.shutdown()
                 NSApplication.shared.terminate(nil)
             }
             .keyboardShortcut("q")
         }
-        .buttonStyle(.plain)
     }
 }

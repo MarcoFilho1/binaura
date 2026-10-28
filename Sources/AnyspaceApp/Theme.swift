@@ -67,3 +67,47 @@ struct SourceIconView: View {
         .accessibilityHidden(true)
     }
 }
+
+/// Estado da câmera/rastreio com símbolo e cor semântica (laranja = atenção, vermelho = erro).
+struct StatusLabel: View {
+    let text: String
+
+    private var style: (symbol: String, color: Color) {
+        if text.hasPrefix("Erro") { return ("exclamationmark.triangle.fill", .red) }
+        if text.contains("não encontrado") { return ("person.fill.questionmark", .orange) }
+        if text.contains("pausada") { return ("pause.circle.fill", .orange) }
+        if text.hasPrefix("Acompanhando") || text.contains("recalibrado") { return ("checkmark.circle.fill", .green) }
+        return ("circle.dotted", .secondary)
+    }
+
+    var body: some View {
+        Label(text, systemImage: style.symbol)
+            .foregroundStyle(style.color == .secondary ? Color.secondary : style.color)
+            .labelStyle(.titleAndIcon)
+    }
+}
+
+/// Linha de menu com destaque ao passar o mouse e ao receber foco, como um item de menu nativo.
+struct MenuRow: View {
+    let title: String
+    var shortcut: String?
+    let action: () -> Void
+    @State private var hovering = false
+
+    var body: some View {
+        Button(action: action) {
+            HStack {
+                Text(title)
+                Spacer()
+                if let shortcut { Text(shortcut).foregroundStyle(.secondary) }
+            }
+            .padding(.horizontal, Space.s).padding(.vertical, 4)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .background(hovering ? Color.accentColor.opacity(0.18) : Color.clear,
+                        in: RoundedRectangle(cornerRadius: 6, style: .continuous))
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .onHover { hovering = $0 }
+    }
+}

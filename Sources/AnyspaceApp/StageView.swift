@@ -14,7 +14,7 @@ struct StageView: View {
             // Reserva espaço para o aviso (em cima) e a faixa de "desligado" (embaixo), para nada cobrir o mapa,
             // e margem lateral para os rótulos Esquerda/Direita.
             let top: CGFloat = model.message == nil ? 0 : (model.permissionIssue == nil ? 64 : 84)
-            let bottom: CGFloat = model.effectOn ? 0 : 96
+            let bottom: CGFloat = 84   // fixo: ligar/desligar não muda o tamanho do mapa
             let radius = max(80, min(geo.size.width / 2 - 84, (geo.size.height - top - bottom) / 2 - 40))
             let center = CGPoint(x: geo.size.width / 2, y: top + (geo.size.height - top - bottom) / 2 + 6)
             ZStack {
@@ -29,13 +29,21 @@ struct StageView: View {
                 HeadMarker(center: center)
 
                 ForEach(model.scene.all) { source in
-                    SourceDisc(source: source, center: center, radius: radius, metersPerRadius: metersPerRadius)
+                    SourceDisc(source: source, center: center, radius: radius, metersPerRadius: metersPerRadius,
+                               onSelect: { focused = true })
                 }
                 .opacity(model.effectOn ? 1 : 0.5)
             }
             .coordinateSpace(name: "stage")
             .overlay(alignment: .top) { notice.padding([.horizontal, .top], Space.l) }
-            .overlay(alignment: .bottom) { if !model.effectOn { OffState().padding(Space.l) } }
+            .overlay(alignment: .bottom) {
+                if model.effectOn {
+                    Text("Arraste uma fonte para mudar de lugar, ou selecione e use as setas do teclado.")
+                        .font(.system(size: 12)).foregroundStyle(.secondary).padding(.bottom, Space.l)
+                } else {
+                    OffState().padding(Space.l)
+                }
+            }
             .contentShape(Rectangle())
             .onTapGesture { focused = true }
         }
@@ -88,6 +96,11 @@ private struct Grid2D: View {
     var body: some View {
         ZStack {
             Canvas { ctx, _ in
+                // Vinheta suave: o palco ganha um pouco de profundidade ao centro.
+                let outer = CGRect(x: center.x - radius, y: center.y - radius, width: radius * 2, height: radius * 2)
+                ctx.fill(Path(ellipseIn: outer),
+                         with: .radialGradient(Gradient(colors: [.primary.opacity(0.045), .clear]),
+                                               center: center, startRadius: 0, endRadius: radius))
                 for meter in 1...4 {
                     let r = radius * CGFloat(meter) / CGFloat(metersPerRadius)
                     let rect = CGRect(x: center.x - r, y: center.y - r, width: r * 2, height: r * 2)
@@ -114,11 +127,12 @@ private struct Grid2D: View {
 
             ForEach(1...4, id: \.self) { meter in
                 let r = radius * CGFloat(meter) / CGFloat(metersPerRadius)
+                let spot = MapGeometry.point(angle: 45, distance: Float(meter), metersPerRadius: metersPerRadius, radiusPixels: Double(radius))
                 Text("\(meter) m")
-                    .font(.caption2.monospacedDigit()).foregroundStyle(.tertiary)
+                    .font(.system(size: 11).monospacedDigit()).foregroundStyle(.secondary)
                     .padding(.horizontal, 3)
                     .background(Color(nsColor: .windowBackgroundColor))
-                    .position(x: center.x + 20, y: center.y - r)
+                    .position(x: center.x + spot.dx, y: center.y + spot.dy)
                     .accessibilityHidden(true)
             }
             Group {
@@ -127,7 +141,7 @@ private struct Grid2D: View {
                 Text("Esquerda").position(x: center.x - radius - 34, y: center.y)
                 Text("Direita").position(x: center.x + radius + 30, y: center.y)
             }
-            .font(.caption).foregroundStyle(.secondary)
+            .font(.system(size: 12, weight: .medium)).foregroundStyle(.secondary)
             .accessibilityHidden(true)
         }
     }
@@ -161,7 +175,7 @@ private struct HeadMarker: View {
 
         if tracking {
             Text(String(format: "%+.0f°", model.headAngle))
-                .font(.caption.monospacedDigit())
+                .font(.system(size: 11).monospacedDigit())
                 .padding(.horizontal, Space.s).padding(.vertical, 2)
                 .background(.regularMaterial, in: Capsule())
                 .overlay(Capsule().strokeBorder(.separator))
@@ -227,6 +241,7 @@ private struct SourceDisc: View {
     let center: CGPoint
     let radius: CGFloat
     let metersPerRadius: Double
+    var onSelect: () -> Void = {}
 
     var body: some View {
         let p = MapGeometry.point(angle: source.angle, distance: source.distance,
@@ -235,20 +250,21 @@ private struct SourceDisc: View {
         let level = CGFloat(min(1, (model.levels[source.id] ?? 0) * 3))
         VStack(spacing: Space.xs) {
             ZStack {
-                if !reduceMotion && !source.muted {
-                    Circle().stroke(Color.accentColor.opacity(0.4), lineWidth: 2)
-                        .frame(width: 44, height: 44)
-                        .scaleEffect(1 + level * 0.5)
+                if !source.muted {
+                    // Com "reduzir movimento" o anel só muda de opacidade, sem escala nem animação.
+                    Circle().stroke(Color.accentColor.opacity(0.5), lineWidth: 2)
+                        .frame(width: 46, height: 46)
+                        .scaleEffect(reduceMotion ? 1 : 1 + level * 0.5)
                         .opacity(Double(level))
-                        .animation(.easeOut(duration: 0.12), value: level)
+                        .animation(reduceMotion ? nil : .easeOut(duration: 0.12), value: level)
                 }
-                SourceIconView(id: source.id, size: 40)
+                Circle().fill(.background).frame(width: 48, height: 48)
+                    .shadow(color: .black.opacity(0.22), radius: 6, y: 2)
+                SourceIconView(id: source.id, size: 36)
                     .grayscale(source.muted ? 1 : 0)
                     .opacity(source.muted ? 0.55 : 1)
-                    .shadow(color: .black.opacity(0.25), radius: 3, y: 1.5)
                 if selected {
-                    RoundedRectangle(cornerRadius: 11, style: .continuous)
-                        .strokeBorder(Color.accentColor, lineWidth: 2.5).frame(width: 48, height: 48)
+                    Circle().strokeBorder(Color.accentColor, lineWidth: 2.5).frame(width: 52, height: 52)
                 }
                 if source.muted {
                     Image(systemName: "speaker.slash.fill").font(.system(size: 9, weight: .bold)).foregroundStyle(.white)
@@ -256,7 +272,7 @@ private struct SourceDisc: View {
                 }
             }
             Text(source.name)
-                .font(.caption.weight(selected ? .semibold : .regular))
+                .font(.system(size: 11, weight: selected ? .semibold : .regular))
                 .lineLimit(1)
                 .padding(.horizontal, Space.s).padding(.vertical, 2)
                 .background(selected ? AnyShapeStyle(Color.accentColor.opacity(0.9)) : AnyShapeStyle(.regularMaterial), in: Capsule())
@@ -267,13 +283,14 @@ private struct SourceDisc: View {
             DragGesture(minimumDistance: 2, coordinateSpace: .named("stage"))
                 .onChanged { value in
                     model.selectedID = source.id
+                    onSelect()
                     let polar = MapGeometry.polar(dx: Double(value.location.x - center.x),
                                                   dy: Double(value.location.y - center.y - 10),
                                                   metersPerRadius: metersPerRadius, radiusPixels: Double(radius))
                     model.move(source.id, angle: polar.angle, distance: polar.distance)
                 }
         )
-        .onTapGesture { model.selectedID = source.id }
+        .onTapGesture { model.selectedID = source.id; onSelect() }
         .accessibilityElement(children: .ignore)
         .accessibilityLabel(source.name)
         .accessibilityValue("\(Describe.angle(source.angle)), a \(Describe.meters(source.distance)), volume \(Int(source.volume * 100)) por cento\(source.muted ? ", mudo" : "")")
@@ -299,8 +316,14 @@ private struct OffState: View {
                 Text("O som do Mac sai normalmente pelo fone.").font(.callout).foregroundStyle(.secondary)
             }
             Spacer(minLength: Space.l)
-            Button("Ligar efeito espacial") { model.setEffect(true) }
-                .buttonStyle(.borderedProminent).controlSize(.large)
+            if let issue = model.permissionIssue {
+                Button("Abrir Ajustes…") { NSWorkspace.shared.open(issue.settingsURL) }
+                    .buttonStyle(.borderedProminent).controlSize(.large)
+                Button("Tentar de novo") { model.message = nil; model.setEffect(true) }.controlSize(.large)
+            } else {
+                Button("Ligar efeito espacial") { model.setEffect(true) }
+                    .buttonStyle(.borderedProminent).controlSize(.large)
+            }
         }
         .padding(Space.l)
         .frame(maxWidth: 560)

@@ -6,6 +6,7 @@ struct MainWindowView: View {
     @EnvironmentObject var model: AppModel
     @AppStorage("didSeeWelcome") private var didSeeWelcome = false
     @State private var showInspector = true
+    @State private var showWelcome = false
     @State private var askProfileName = false
     @State private var profileName = ""
 
@@ -50,8 +51,9 @@ struct MainWindowView: View {
             } message: {
                 Text("Guarda posições, volumes, abertura, reverberação e filtro.")
             }
-            .sheet(isPresented: Binding(get: { !didSeeWelcome && !model.isPreview }, set: { _ in })) {
-                WelcomeView { didSeeWelcome = true }
+            .onAppear { if !didSeeWelcome && !model.isPreview { showWelcome = true } }
+            .sheet(isPresented: $showWelcome, onDismiss: { didSeeWelcome = true }) {
+                WelcomeView { model.setEffect(true); showWelcome = false }
             }
             .sheet(isPresented: $model.showBlindTest) { BlindTestView().environmentObject(model) }
             .frame(minWidth: 860, minHeight: 560)
