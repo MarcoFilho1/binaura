@@ -257,6 +257,37 @@ do {
     expect(SoundScene().invertHead, "sentido da cabeça padrão é o invertido")
 }
 
+print("\nMalha do rosto (Delaunay)")
+var seedMesh: UInt64 = 42
+func rnd() -> CGFloat { seedMesh = seedMesh &* 6364136223846793005 &+ 1442695040888963407; return CGFloat(seedMesh >> 40) / CGFloat(1 << 24) }
+let cloud = (0..<40).map { _ in CGPoint(x: rnd(), y: rnd()) }
+let tris = delaunayTriangles(cloud)
+// Hull convexo (monotone chain) para a fórmula de Euler: T = 2n - 2 - h
+func hullCount(_ pts: [CGPoint]) -> Int {
+    let p = pts.sorted { $0.x < $1.x || ($0.x == $1.x && $0.y < $1.y) }
+    func cross(_ o: CGPoint, _ a: CGPoint, _ b: CGPoint) -> CGFloat { (a.x - o.x) * (b.y - o.y) - (a.y - o.y) * (b.x - o.x) }
+    var lower: [CGPoint] = [], upper: [CGPoint] = []
+    for q in p { while lower.count >= 2 && cross(lower[lower.count - 2], lower[lower.count - 1], q) <= 0 { lower.removeLast() }; lower.append(q) }
+    for q in p.reversed() { while upper.count >= 2 && cross(upper[upper.count - 2], upper[upper.count - 1], q) <= 0 { upper.removeLast() }; upper.append(q) }
+    return lower.count + upper.count - 2
+}
+expect(tris.count == 2 * cloud.count - 2 - hullCount(cloud), "nº de triângulos bate com a fórmula de Euler (\(tris.count) triângulos; esperado \(2 * cloud.count - 2 - hullCount(cloud)), envoltória de \(hullCount(cloud)) pontos)")
+var delaunayOK = true
+for t in tris {
+    let a = cloud[t[0]], b = cloud[t[1]], c = cloud[t[2]]
+    let d = 2 * (a.x * (b.y - c.y) + b.x * (c.y - a.y) + c.x * (a.y - b.y))
+    let ux = ((a.x * a.x + a.y * a.y) * (b.y - c.y) + (b.x * b.x + b.y * b.y) * (c.y - a.y) + (c.x * c.x + c.y * c.y) * (a.y - b.y)) / d
+    let uy = ((a.x * a.x + a.y * a.y) * (c.x - b.x) + (b.x * b.x + b.y * b.y) * (a.x - c.x) + (c.x * c.x + c.y * c.y) * (b.x - a.x)) / d
+    let r = hypot(a.x - ux, a.y - uy)
+    for (i, p) in cloud.enumerated() where !t.contains(i) && hypot(p.x - ux, p.y - uy) < r - 1e-9 { delaunayOK = false }
+}
+expect(delaunayOK, "nenhum ponto fica dentro do círculo de um triângulo (propriedade de Delaunay)")
+expect(delaunayTriangles([CGPoint(x: 0, y: 0), CGPoint(x: 1, y: 0)]).isEmpty, "menos de 3 pontos não gera triângulos")
+let square = [CGPoint(x: 0, y: 0), CGPoint(x: 1, y: 0), CGPoint(x: 1, y: 1), CGPoint(x: 0, y: 1), CGPoint(x: 0.5, y: 0.5)]
+expect(delaunayTriangles(square).count == 4, "quadrado com ponto central = 4 triângulos")
+expect(prunedTriangles([[0, 1, 2]], points: [CGPoint(x: 0, y: 0), CGPoint(x: 1, y: 0), CGPoint(x: 0, y: 1)], maxEdge: 1.2).count == 0,
+       "triângulo com aresta longa demais é removido")
+
 print("\nYaw contínuo (YawEstimator)")
 expect(abs(estimateYaw(fMedian: 0, fEyes: 0, fallbackDegrees: 99)) < 0.01, "rosto de frente = 0°")
 expect(estimateYaw(fMedian: nil, fEyes: nil, fallbackDegrees: 45) == 45, "sem pontos usa o yaw do Vision")

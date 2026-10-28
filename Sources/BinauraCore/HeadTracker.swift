@@ -9,6 +9,9 @@ public final class HeadTracker: NSObject, AVCaptureVideoDataOutputSampleBufferDe
     private let boxLock = NSLock()
     private var box: CGRect?
     private var currentDetail: FaceDetail?
+    // Só usados na fila da câmera: a malha fixa seus triângulos num rosto de frente e os mantém enquanto o rosto existir.
+    private var cachedTriangles: [[Int]]?
+    private var faceFrames = 0, noFaceFrames = 0
     private var landmarks = false
 
     /// Para mostrar a imagem da câmera na janela de depuração.
@@ -85,6 +88,12 @@ public final class HeadTracker: NSObject, AVCaptureVideoDataOutputSampleBufferDe
         // Com vários rostos, usa o maior (o mais perto da câmera).
         let face = request.results?.max { $0.boundingBox.width < $1.boundingBox.width }
 
+        if face == nil {
+            noFaceFrames += 1
+            if noFaceFrames > 30 { cachedTriangles = nil; faceFrames = 0 }
+        } else {
+            noFaceFrames = 0
+        }
         let detail = face.flatMap { makeDetail($0) }
         boxLock.lock()
         box = face?.boundingBox
@@ -104,14 +113,6 @@ public final class HeadTracker: NSObject, AVCaptureVideoDataOutputSampleBufferDe
             region?.normalizedPoints.map { CGPoint(x: box.minX + $0.x * box.width, y: box.minY + $0.y * box.height) } ?? []
         }
         let lm = face.landmarks
-        var contours: [FaceDetail.Contour] = []
-        for (name, points, closed) in [
-            ("contorno", map(lm?.faceContour), false), ("sobrancelha esq", map(lm?.leftEyebrow), false),
-            ("sobrancelha dir", map(lm?.rightEyebrow), false), ("olho esq", map(lm?.leftEye), true),
-            ("olho dir", map(lm?.rightEye), true), ("nariz", map(lm?.noseCrest), false),
-            ("lábios", map(lm?.outerLips), true),
-        ] where !points.isEmpty { contours.append(.init(name: name, points: points, closed: closed)) }
-
         let leftPupil = map(lm?.leftPupil).first, rightPupil = map(lm?.rightPupil).first
         let pupils = [leftPupil, rightPupil].compactMap { $0 }
 
@@ -135,7 +136,19 @@ public final class HeadTracker: NSObject, AVCaptureVideoDataOutputSampleBufferDe
         let features = geometryFeatures(lm: lm, map: map)
         let visionYaw = yawRad * 180 / .pi
         let yaw = sign * estimateYaw(fMedian: features["f_median"], fEyes: features["f_eyes"], fallbackDegrees: visionYaw)
-        var detail = FaceDetail(box: box, yaw: yaw, pitch: pitch, roll: roll, contours: contours,
+        let mesh = buildFaceMesh(contour: map(lm?.faceContour), leftBrow: map(lm?.leftEyebrow), rightBrow: map(lm?.rightEyebrow),
+                                 leftEye: map(lm?.leftEye), rightEye: map(lm?.rightEye), noseCrest: map(lm?.noseCrest),
+                                 nose: map(lm?.nose), lips: map(lm?.outerLips), median: map(lm?.medianLine), pupils: pupils)
+        var triangles: [[Int]] = []
+        if let mesh {
+            faceFrames += 1
+            let frontal = abs(yaw) < 20 && abs(roll ?? 0) < 20
+            if cachedTriangles == nil, frontal || faceFrames > 40 {
+                cachedTriangles = prunedTriangles(delaunayTriangles(mesh), points: mesh, maxEdge: 0.75 * box.width)
+            }
+            triangles = cachedTriangles ?? []
+        }
+        var detail = FaceDetail(box: box, yaw: yaw, pitch: pitch, roll: roll, mesh: mesh ?? [], meshTriangles: triangles,
                                 pupils: pupils, gazeYaw: nil, gazePitch: nil)
         if let eyeYaw, let eyePitch { detail.gazeYaw = yaw + eyeYaw; detail.gazePitch = (pitch ?? 0) + eyePitch }
         detail.rawYawDeg = visionYaw

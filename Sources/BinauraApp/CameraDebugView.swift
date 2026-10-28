@@ -92,7 +92,7 @@ private func poseText(yaw: Float, pitch: Float?) -> String {
     return horizontal + vertical
 }
 
-/// Contornos do rosto, pupilas e a seta do olhar, sobre a imagem espelhada da câmera.
+/// Rede de pontos do rosto (como nos apps de reconhecimento facial), pupilas e a seta do olhar, sobre a imagem espelhada.
 struct FaceOverlay: View {
     let detail: FaceDetail?
 
@@ -101,15 +101,20 @@ struct FaceOverlay: View {
             guard let d = detail else { return }
             // A imagem é mostrada espelhada, então o x inverte.
             func point(_ p: CGPoint) -> CGPoint { CGPoint(x: (1 - p.x) * size.width, y: (1 - p.y) * size.height) }
-            for contour in d.contours {
-                var path = Path()
-                for (i, p) in contour.points.enumerated() { i == 0 ? path.move(to: point(p)) : path.addLine(to: point(p)) }
-                if contour.closed { path.closeSubpath() }
-                ctx.stroke(path, with: .color(.green.opacity(0.9)), style: StrokeStyle(lineWidth: 1.5, lineJoin: .round))
+            // Rede: linhas finas entre os pontos vizinhos e um ponto branco em cada marco do rosto.
+            var lines = Path()
+            for t in d.meshTriangles where t.allSatisfy({ $0 < d.mesh.count }) {
+                lines.move(to: point(d.mesh[t[0]]))
+                lines.addLine(to: point(d.mesh[t[1]]))
+                lines.addLine(to: point(d.mesh[t[2]]))
+                lines.closeSubpath()
             }
-            for pupil in d.pupils {
-                let c = point(pupil)
-                ctx.fill(Path(ellipseIn: CGRect(x: c.x - 3, y: c.y - 3, width: 6, height: 6)), with: .color(.cyan))
+            ctx.stroke(lines, with: .color(.black.opacity(0.35)), style: StrokeStyle(lineWidth: 2.4, lineJoin: .round))
+            ctx.stroke(lines, with: .color(.white.opacity(0.9)), style: StrokeStyle(lineWidth: 1.1, lineJoin: .round))
+            for p in d.mesh {
+                let c = point(p)
+                ctx.fill(Path(ellipseIn: CGRect(x: c.x - 3.6, y: c.y - 3.6, width: 7.2, height: 7.2)), with: .color(.black.opacity(0.35)))
+                ctx.fill(Path(ellipseIn: CGRect(x: c.x - 2.6, y: c.y - 2.6, width: 5.2, height: 5.2)), with: .color(.white))
             }
             // Seta do olhar a partir do ponto médio das pupilas (ou do centro do rosto).
             if let gy = d.gazeYaw, let gp = d.gazePitch {

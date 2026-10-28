@@ -40,6 +40,10 @@ enum Snapshot {
             ("menu", AnyView(MenuBarPanel().background(Color(nsColor: .windowBackgroundColor))), NSSize(width: 300, height: 360)),
             ("boas-vindas", AnyView(WelcomeView {}.background(Color(nsColor: .windowBackgroundColor))), NSSize(width: 460, height: 640)),
             ("teste-cego", AnyView(BlindTestView().background(Color(nsColor: .windowBackgroundColor))), NSSize(width: 460, height: 340)),
+            ("malha", AnyView(ZStack {
+                LinearGradient(colors: [Color(white: 0.55), Color(white: 0.30)], startPoint: .top, endPoint: .bottom)
+                FaceOverlay(detail: syntheticFace())
+            }), NSSize(width: 640, height: 480)),
             ("camera", AnyView(CameraDebugView().background(Color(nsColor: .windowBackgroundColor))), NSSize(width: 480, height: 700)),
         ]
         let off = AppModel(startEffect: false, preview: sampleScene())
@@ -50,7 +54,7 @@ enum Snapshot {
             for dark in [false, true] {
                 let content = name == "janela-desligado" ? view : AnyView(view.environmentObject(model))
                 // Formulários com rolagem não saem na captura da janela; o ImageRenderer os desenha direto.
-                if ["inspetor", "camera"].contains(name) {
+                if ["inspetor", "camera", "malha"].contains(name) {
                     let renderer = ImageRenderer(content: content.frame(width: size.width, height: size.height)
                         .environment(\.colorScheme, dark ? .dark : .light))
                     renderer.scale = 2
@@ -66,6 +70,34 @@ enum Snapshot {
         }
         print("Capturas em \(folder)")
         exit(0)
+    }
+
+    /// Rosto sintético (sem câmera) para conferir o desenho da malha: elipses no lugar dos marcos do Vision.
+    static func syntheticFace() -> FaceDetail? {
+        let cx = 0.5, cy = 0.5
+        func ellipse(_ x: Double, _ y: Double, _ a: Double, _ b: Double, _ n: Int, from: Double = 0, to: Double = 360) -> [CGPoint] {
+            (0..<n).map { i in
+                let th = (from + (to - from) * Double(i) / Double(max(n - 1, 1))) * .pi / 180
+                return CGPoint(x: x + a * cos(th), y: y + b * sin(th))
+            }
+        }
+        let contour = ellipse(cx, cy + 0.03, 0.17, 0.28, 17, from: 175, to: 365)
+        let leftBrow = (0..<5).map { CGPoint(x: cx - 0.15 + 0.11 * Double($0) / 4, y: cy + 0.17 + 0.012 * sin(Double($0) * .pi / 4)) }
+        let rightBrow = (0..<5).map { CGPoint(x: cx + 0.04 + 0.11 * Double($0) / 4, y: cy + 0.17 + 0.012 * sin(Double($0) * .pi / 4)) }
+        let leftEye = ellipse(cx - 0.085, cy + 0.10, 0.037, 0.016, 6)
+        let rightEye = ellipse(cx + 0.085, cy + 0.10, 0.037, 0.016, 6)
+        let crest = (0..<4).map { CGPoint(x: cx, y: cy + 0.10 - 0.04 * Double($0)) }
+        let nose = [CGPoint(x: cx - 0.04, y: cy - 0.07), CGPoint(x: cx, y: cy - 0.078), CGPoint(x: cx + 0.04, y: cy - 0.07)]
+        let lips = ellipse(cx, cy - 0.15, 0.055, 0.022, 8)
+        let median = (0..<5).map { CGPoint(x: cx, y: cy + 0.2 - 0.11 * Double($0)) }
+        let pupils = [CGPoint(x: cx - 0.085, y: cy + 0.10), CGPoint(x: cx + 0.085, y: cy + 0.10)]
+        guard let mesh = buildFaceMesh(contour: contour, leftBrow: leftBrow, rightBrow: rightBrow, leftEye: leftEye,
+                                       rightEye: rightEye, noseCrest: crest, nose: nose, lips: lips, median: median, pupils: pupils)
+        else { return nil }
+        let box = CGRect(x: cx - 0.19, y: cy - 0.28, width: 0.38, height: 0.58)
+        return FaceDetail(box: box, yaw: 12, pitch: 3, mesh: mesh,
+                          meshTriangles: prunedTriangles(delaunayTriangles(mesh), points: mesh, maxEdge: 0.75 * box.width),
+                          pupils: pupils, gazeYaw: 18, gazePitch: 4)
     }
 
     /// Abre a janela real com dados de exemplo e a mantém aberta por `seconds`, imprimindo o número dela

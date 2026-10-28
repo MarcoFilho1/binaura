@@ -93,3 +93,10 @@ O revisor independente conferiu o palco, o painel da barra de menu, as boas-vind
 - [ ] Barra de menu: trocar de perfil, volume por fonte, "Dispensar" no aviso.
 - [ ] VoiceOver: as bolinhas do mapa leem nome, direção e distância?
 - [ ] Com "Reduzir movimento" ligado nos Ajustes do Sistema, o anel de nível continua visível (só muda de opacidade)?
+
+## Câmera de debug: rede do rosto (aguardando você)
+- [ ] A rede de pontos brancos aparece sobre o seu rosto e acompanha os movimentos?
+- [ ] Os pontos estão nos lugares certos (olhos, sobrancelhas, nariz, boca, maxilar)?
+- [ ] As linhas ficam estáveis (sem piscar entre quadros) enquanto você mexe a cabeça?
+- [ ] A testa (3 pontos estimados) ficou razoável, ou flutua demais?
+- [ ] Em ângulos grandes (virando muito a cabeça), a rede continua legível ou se desfaz?
