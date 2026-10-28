@@ -28,7 +28,7 @@ public struct SoundProfile: Codable, Equatable, Identifiable {
     public var id: String { name }
 }
 
-/// Tudo o que o usuário configura. Salvo em ~/Library/Application Support/Anyspace/scene.json.
+/// Tudo o que o usuário configura. Salvo em ~/Library/Application Support/Binaura/scene.json.
 public struct SoundScene: Codable, Equatable {
     public static let restID = "rest"
 
@@ -105,7 +105,21 @@ public struct SoundScene: Codable, Equatable {
 public enum SceneStore {
     public static var url: URL {
         let base = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
-        return base.appendingPathComponent("Anyspace/scene.json")
+        return base.appendingPathComponent("Binaura/scene.json")
+    }
+
+    /// Pasta antiga, do tempo em que o projeto se chamava Anyspace.
+    private static var legacyURL: URL {
+        FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
+            .appendingPathComponent("Anyspace/scene.json")
+    }
+
+    /// Na primeira abertura depois da troca de nome, copia a cena antiga (perfis e posições) para a pasta nova.
+    public static func migrateLegacyScene() {
+        let fm = FileManager.default
+        guard !fm.fileExists(atPath: url.path), fm.fileExists(atPath: legacyURL.path) else { return }
+        try? fm.createDirectory(at: url.deletingLastPathComponent(), withIntermediateDirectories: true)
+        try? fm.copyItem(at: legacyURL, to: url)
     }
 
     public static func load(from url: URL = url) -> SoundScene {

@@ -1,5 +1,5 @@
 import AVFoundation
-import AnyspaceCore
+import BinauraCore
 import AppKit
 import SwiftUI
 

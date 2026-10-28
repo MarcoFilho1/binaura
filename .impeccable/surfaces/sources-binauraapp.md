@@ -1,11 +1,11 @@
 ---
 version: 1
-slug: "sources-anyspaceapp"
-primary_target: "Sources/AnyspaceApp"
+slug: "sources-binauraapp"
+primary_target: "Sources/BinauraApp"
 related_targets: []
 ---
 
-# Surface brief: Anyspace (janela principal, barra de menu, debug da câmera, teste cego)
+# Surface brief: Binaura (janela principal, barra de menu, debug da câmera, teste cego)
 
 Modo: Operate. App nativo macOS em SwiftUI. Direção fixada pelo usuário: aparência premium e totalmente nativa do macOS (a direção do brief vence o sorteio; nenhuma rolagem de mundos foi feita).
 

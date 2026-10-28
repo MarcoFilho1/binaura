@@ -27,7 +27,7 @@ Uso diário e rápido pela barra de menu (ligar/desligar, trocar perfil); a jane
 - Decidido: abertura padrão 30°, reverberação ligada, filtro HRTF alta qualidade, sentido da cabeça invertido.
 
 ## Brand Commitments
-Nome: Anyspace. Sem identidade visual definida. A pessoa pediu aparência premium e totalmente nativa do macOS.
+Nome: Binaura. Sem identidade visual definida. A pessoa pediu aparência premium e totalmente nativa do macOS.
 
 ## Evidence on Hand
 Nenhuma prova de clientes ou métricas. Resultado real do autor: 12 de 12 no teste cego (esquerda/frente/direita) com HRTF de alta qualidade. Não inventar números.

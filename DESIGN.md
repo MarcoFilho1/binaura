@@ -1,5 +1,5 @@
 ---
-name: Anyspace
+name: Binaura
 description: Mesa de som nativa do macOS; o palco espacial é o protagonista e o resto fala o vocabulário do sistema.
 colors:
   accent-user: "#007AFF"
@@ -62,7 +62,7 @@ components:
     padding: "16px"
 ---
 
-# Design System: Anyspace
+# Design System: Binaura
 
 Plataforma: app nativo macOS 15+ em SwiftUI. Os tokens acima são valores SwiftUI/AppKit, não CSS. As cores são aproximações em hex dos estilos semânticos do sistema (o código nunca fixa hex); o valor real vem do sistema, do modo claro/escuro e da cor de destaque escolhida pela pessoa. Tamanhos em px equivalem a pontos.
 

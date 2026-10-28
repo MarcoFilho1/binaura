@@ -1,4 +1,4 @@
-import AnyspaceCore
+import BinauraCore
 import SwiftUI
 
 /// O palco: o espaço visto de cima, com você no centro olhando para cima. Arraste as fontes,

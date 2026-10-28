@@ -1,7 +1,7 @@
-import AnyspaceCore
+import BinauraCore
 import Foundation
 
-// Anyspace (linha de comando): o som do sistema vira uma fonte estéreo em um ponto do espaço 3D.
+// Binaura (linha de comando): o som do sistema vira uma fonte estéreo em um ponto do espaço 3D.
 //
 //   --angle N      direção em graus: 0 frente, 90 direita, -90 esquerda, 180 atrás (padrão 0)
 //   --distance D   distância em metros (padrão 1)
@@ -9,9 +9,9 @@ import Foundation
 //   --head         liga o rastreio da cabeça pela webcam (o espaço fica parado quando você vira)
 //   --camera NOME  escolhe a câmera pelo nome (ex.: --camera C922); padrão: a do Mac
 //   --invert       volta ao sentido bruto da câmera (o padrão já é invertido: testado com o Mac e a C922)
-//   --send HOST:PORTA --password SENHA   em vez de tocar, envia o som deste Mac para outro Anyspace pela rede
+//   --send HOST:PORTA --password SENHA   em vez de tocar, envia o som deste Mac para outro Binaura pela rede
 //   --seconds N    encerra sozinho e devolve o som ao normal
-//   Para recalibrar o centro da cabeça: pkill -USR1 AnyspaceCLI
+//   Para recalibrar o centro da cabeça: pkill -USR1 BinauraCLI
 
 setvbuf(stdout, nil, _IOLBF, 0)
 

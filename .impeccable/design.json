@@ -1,7 +1,7 @@
 {
   "schemaVersion": 2,
   "generatedAt": "2026-10-28T00:00:00Z",
-  "title": "Design System: Anyspace",
+  "title": "Design System: Binaura",
   "extensions": {
     "platform": "macos-swiftui",
     "note": "Tokens are SwiftUI/AppKit semantic values; hex values are approximations of system colors in default light appearance. Snippets below are web approximations for panel preview only.",
@@ -75,7 +75,7 @@
       "kind": "nav",
       "refersTo": "menu-row",
       "description": "Linha de menu com hover e foco de teclado em acento a 18%.",
-      "html": "<div class=\"ds-menurow\" tabindex=\"0\"><span>Abrir Anyspace…</span><span class=\"ds-menurow-key\">⌘O</span></div>",
+      "html": "<div class=\"ds-menurow\" tabindex=\"0\"><span>Abrir Binaura…</span><span class=\"ds-menurow-key\">⌘O</span></div>",
       "css": ".ds-menurow{display:flex;justify-content:space-between;padding:4px 8px;border-radius:6px;font:13px -apple-system,system-ui,sans-serif;width:268px}.ds-menurow-key{color:#6b6b6b}.ds-menurow:hover,.ds-menurow:focus-visible{background:rgba(0,122,255,.18);outline:none}"
     },
     {

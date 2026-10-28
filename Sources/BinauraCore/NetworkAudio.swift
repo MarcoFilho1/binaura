@@ -1,7 +1,7 @@
 import Foundation
 import Network
 
-/// Formato do pacote (UDP, rede local): "ANYS" · versão(1) · sequência(4) · senha(4) · quadros(2) · PCM int16 estéreo intercalado.
+/// Formato do pacote (UDP, rede local): "BNRA" · versão(1) · sequência(4) · senha(4) · quadros(2) · PCM int16 estéreo intercalado.
 /// Não é criptografado: a senha só evita que qualquer aparelho da rede injete áudio sem querer.
 public enum AudioPacket {
     public static let headerSize = 15
@@ -15,7 +15,7 @@ public enum AudioPacket {
 
     public static func encode(sequence: UInt32, password: String, left: [Float], right: [Float]) -> Data {
         let frames = min(left.count, right.count)
-        var data = Data("ANYS".utf8)
+        var data = Data("BNRA".utf8)
         data.append(1)
         for value in [sequence, passwordHash(password)] {
             withUnsafeBytes(of: value.bigEndian) { data.append(contentsOf: $0) }
@@ -33,7 +33,7 @@ public enum AudioPacket {
     /// Devolve nil se o pacote for inválido ou a senha estiver errada.
     public static func decode(_ data: Data, password: String) -> (sequence: UInt32, left: [Float], right: [Float])? {
         let bytes = [UInt8](data)
-        guard bytes.count >= headerSize, Array(bytes[0..<4]) == Array("ANYS".utf8), bytes[4] == 1 else { return nil }
+        guard bytes.count >= headerSize, Array(bytes[0..<4]) == Array("BNRA".utf8), bytes[4] == 1 else { return nil }
         func u32(_ at: Int) -> UInt32 { bytes[at..<at + 4].reduce(0) { $0 << 8 | UInt32($1) } }
         let frames = Int(UInt16(bytes[13]) << 8 | UInt16(bytes[14]))
         guard u32(9) == passwordHash(password), bytes.count == headerSize + frames * 4 else { return nil }
@@ -50,7 +50,7 @@ public enum AudioPacket {
 /// Recebe áudio de outro dispositivo e o escreve nos buffers de uma fonte.
 public final class UDPAudioReceiver {
     private let listener: NWListener
-    private let queue = DispatchQueue(label: "anyspace.udp.receive")
+    private let queue = DispatchQueue(label: "binaura.udp.receive")
     private let password: String
     private let left: MonoRingBuffer
     private let right: MonoRingBuffer
@@ -58,7 +58,7 @@ public final class UDPAudioReceiver {
     public private(set) var packetsRejected = 0
 
     public init(port: UInt16, password: String, left: MonoRingBuffer, right: MonoRingBuffer) throws {
-        guard let nwPort = NWEndpoint.Port(rawValue: port) else { throw NSError(domain: "anyspace", code: 1) }
+        guard let nwPort = NWEndpoint.Port(rawValue: port) else { throw NSError(domain: "binaura", code: 1) }
         listener = try NWListener(using: .udp, on: nwPort)
         self.password = password
         self.left = left
@@ -96,7 +96,7 @@ public final class UDPAudioReceiver {
 /// Envia áudio estéreo a cada 10 ms lendo de dois buffers.
 public final class UDPAudioSender {
     private let connection: NWConnection
-    private let queue = DispatchQueue(label: "anyspace.udp.send")
+    private let queue = DispatchQueue(label: "binaura.udp.send")
     private let password: String
     private let left: MonoRingBuffer
     private let right: MonoRingBuffer

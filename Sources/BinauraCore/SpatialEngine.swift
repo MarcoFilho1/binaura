@@ -81,7 +81,7 @@ public final class SpatialEngine {
         environment.listenerAngularOrientation = AVAudio3DAngularOrientation(yaw: headYawSign * degrees, pitch: 0, roll: 0)
     }
 
-    /// Sinal que converte "virou para a direita" no `yaw` do AVAudioEnvironmentNode (conferido por anyspace-check).
+    /// Sinal que converte "virou para a direita" no `yaw` do AVAudioEnvironmentNode (conferido por binaura-check).
     let headYawSign: Float = 1
 
     public static let algorithms: [String: AVAudio3DMixingRenderingAlgorithm] = [

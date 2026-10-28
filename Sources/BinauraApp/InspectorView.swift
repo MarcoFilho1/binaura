@@ -1,4 +1,4 @@
-import AnyspaceCore
+import BinauraCore
 import SwiftUI
 
 /// Inspetor à direita: fontes, câmera, som, perfis e rede. Form agrupado, como os Ajustes do Sistema.
@@ -258,7 +258,7 @@ struct InspectorView: View {
                 }
                 .disabled(model.scene.networkPassword.isEmpty || UInt16(networkPort) == nil)
             }
-            Text("No outro Mac: AnyspaceCLI --send IP:PORTA --password SENHA. Sem criptografia: use só em rede de confiança.")
+            Text("No outro Mac: BinauraCLI --send IP:PORTA --password SENHA. Sem criptografia: use só em rede de confiança.")
                 .font(.caption).foregroundStyle(.secondary)
         }
     }

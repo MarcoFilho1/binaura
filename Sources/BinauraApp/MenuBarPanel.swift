@@ -1,4 +1,4 @@
-import AnyspaceCore
+import BinauraCore
 import AppKit
 import SwiftUI
 
@@ -45,7 +45,7 @@ struct MenuBarPanel: View {
     private var header: some View {
         HStack(spacing: Space.m) {
             VStack(alignment: .leading, spacing: 2) {
-                Text("Anyspace").font(.headline)
+                Text("Binaura").font(.headline)
                 Text(statusLine).font(.caption).foregroundStyle(.secondary).lineLimit(1)
             }
             Spacer()
@@ -93,12 +93,12 @@ struct MenuBarPanel: View {
 
     private var footer: some View {
         VStack(alignment: .leading, spacing: 0) {
-            MenuRow(title: "Abrir Anyspace…", shortcut: "⌘O") {
+            MenuRow(title: "Abrir Binaura…", shortcut: "⌘O") {
                 openWindow(id: "main")
                 NSApplication.shared.activate(ignoringOtherApps: true)
             }
             .keyboardShortcut("o")
-            MenuRow(title: "Sair do Anyspace", shortcut: "⌘Q") {
+            MenuRow(title: "Sair do Binaura", shortcut: "⌘Q") {
                 model.shutdown()
                 NSApplication.shared.terminate(nil)
             }

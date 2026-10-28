@@ -22,7 +22,7 @@ public final class HeadTracker: NSObject, AVCaptureVideoDataOutputSampleBufferDe
     /// Estado da permissão de câmera, para a interface explicar o problema antes de tentar ligar.
     public static var authorization: AVAuthorizationStatus { AVCaptureDevice.authorizationStatus(for: .video) }
 
-    private let queue = DispatchQueue(label: "anyspace.head")
+    private let queue = DispatchQueue(label: "binaura.head")
     private let onYaw: (Float?) -> Void
     private let sign: Float
 

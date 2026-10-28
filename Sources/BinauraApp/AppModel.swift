@@ -1,5 +1,5 @@
 import AVFoundation
-import AnyspaceCore
+import BinauraCore
 import AppKit
 import Foundation
 import ServiceManagement
@@ -65,6 +65,7 @@ final class AppModel: ObservableObject {
     /// `preview` desliga tudo o que toca em áudio, câmera e disco, para gerar capturas de tela com dados de exemplo.
     init(startEffect: Bool, preview: SoundScene? = nil) {
         isPreview = preview != nil
+        if preview == nil { SceneStore.migrateLegacyScene() }
         let scene = preview ?? SceneStore.load()
         self.scene = scene
         session = Session(scene: scene)
@@ -156,7 +157,7 @@ final class AppModel: ObservableObject {
             // Não adianta tentar de novo: só os Ajustes do Sistema resolvem. Mantém a escolha da pessoa ligada.
             headStatus = "Erro: permissão da câmera"
             if message == nil {
-                message = "Câmera: permissão negada. Libere o Anyspace em Ajustes do Sistema > Privacidade e Segurança > Câmera."
+                message = "Câmera: permissão negada. Libere o Binaura em Ajustes do Sistema > Privacidade e Segurança > Câmera."
             }
         } else if wantCamera && !head.isRunning {
             headStatus = "Ligando a câmera…"

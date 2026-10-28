@@ -3,14 +3,14 @@
 Comando base (fone conectado, tocando um vídeo ou música; o app encerra sozinho):
 
     cd ~/anyspace && ./scripts/build-app.sh
-    open -n -W --stdout ~/anyspace/build/fase1.log build/AnyspaceCLI.app --args --angle 90 --seconds 20
+    open -n -W --stdout ~/anyspace/build/fase1.log build/BinauraCLI.app --args --angle 90 --seconds 20
 
 ## Fase 0: captura (validada em 2026-10-28)
 - [x] Só o ouvido esquerdo tocou no modo de teste: o caminho funciona e o original é silenciado.
 - [ ] Vídeo sem dessincronização perceptível (você disse que não notou).
 
 ## Fase 1: uma fonte no espaço (aguardando você)
-Verificação offline já passou (`swift run anyspace-check`): a 90° o ouvido direito recebe 14 dB mais forte e ~0,73 ms antes; 1 m → 4 m cai 12 dB.
+Verificação offline já passou (`swift run binaura-check`): a 90° o ouvido direito recebe 14 dB mais forte e ~0,73 ms antes; 1 m → 4 m cai 12 dB.
 
 Para ouvir, troque o valor de `--angle`:
 - [ ] `--angle 90`: o som vem da direita?
@@ -27,7 +27,7 @@ Verificação offline já passou: com a cabeça virada 45° à direita a fonte d
 Comando (câmera do Mac; a primeira vez o macOS pede permissão de câmera, aceite e rode de novo):
 
     cd ~/anyspace && ./scripts/build-app.sh
-    open -n -W --stdout ~/anyspace/build/fase2.log build/AnyspaceCLI.app --args --head --angle 0 --seconds 40
+    open -n -W --stdout ~/anyspace/build/fase2.log build/BinauraCLI.app --args --head --angle 0 --seconds 40
     # e em outro terminal: tail -f ~/anyspace/build/fase2.log
 
 Nos 2 primeiros segundos olhe para a tela (calibra o centro). Depois:
@@ -36,16 +36,16 @@ Nos 2 primeiros segundos olhe para a tela (calibra o centro). Depois:
 - [ ] Se o sentido estiver ao contrário, rode de novo com `--invert` (e me avise).
 - [ ] O som treme parado olhando para a tela? Quanto atrasa ao virar?
 - [ ] "rosto em X de Y quadros": quantos quadros acham seu rosto (com boa luz deveria ser ~tudo)?
-- [ ] Recalibrar: em outro terminal, `pkill -USR1 AnyspaceCLI`.
+- [ ] Recalibrar: em outro terminal, `pkill -USR1 BinauraCLI`.
 - [ ] Com a C922: adicione `--camera C922`.
 - [ ] Rosto muito virado (>60°): o som mantém o último ângulo e depois volta ao centro?
 
 ## Fase 3 + 4: interface, mapa e conforto (aguardando você)
-Agora há dois apps: `build/Anyspace.app` (interface) e `build/AnyspaceCLI.app` (testes por linha de comando, usado nas fases 0–2; os comandos acima foram atualizados). O app gráfico tem outro identificador, então o macOS pode pedir de novo as permissões de áudio e de câmera.
+Agora há dois apps: `build/Binaura.app` (interface) e `build/BinauraCLI.app` (testes por linha de comando, usado nas fases 0–2; os comandos acima foram atualizados). O app gráfico tem outro identificador, então o macOS pode pedir de novo as permissões de áudio e de câmera.
 
-Verificação offline já passou (`swift run anyspace-check`): estéreo como dois alto-falantes virtuais (canal esquerdo soa no ouvido esquerdo, ~10 dB), cena JSON, conversão mapa↔ângulo, agrupamento de processos por app, fila circular.
+Verificação offline já passou (`swift run binaura-check`): estéreo como dois alto-falantes virtuais (canal esquerdo soa no ouvido esquerdo, ~10 dB), cena JSON, conversão mapa↔ângulo, agrupamento de processos por app, fila circular.
 
-Abrir: `open ~/anyspace/build/Anyspace.app` (começa com o efeito ligado; use `--args --no-start` para abrir sem ligar).
+Abrir: `open ~/anyspace/build/Binaura.app` (começa com o efeito ligado; use `--args --no-start` para abrir sem ligar).
 
 Interface e mapa
 - [ ] A janela abre com o mapa à esquerda e os controles à direita? O ícone na barra de menu aparece?
@@ -70,7 +70,7 @@ Cabeça e bateria
 ## Fase 5: áudio de outro dispositivo (versão mínima, aguardando você)
 Verificação offline já passou em loopback (pacote, senha errada rejeitada, áudio chega igual). Não testado entre dois aparelhos reais.
 - [ ] No app: defina uma senha, porta 5004, "Receber áudio nessa porta". Uma bolinha "Rede 5004" aparece no mapa.
-- [ ] Em outro Mac (ou neste, em outro terminal): `build/AnyspaceCLI.app/Contents/MacOS/AnyspaceCLI --send IP:5004 --password SENHA`. O som do outro Mac sai na bolinha?
+- [ ] Em outro Mac (ou neste, em outro terminal): `build/BinauraCLI.app/Contents/MacOS/BinauraCLI --send IP:5004 --password SENHA`. O som do outro Mac sai na bolinha?
 - [ ] Atraso e falhas na sua rede Wi-Fi? (PCM sem compressão ≈ 1,5 Mbit/s)
 - [ ] Windows/Android ainda não têm remetente; o formato do pacote está em `NetworkAudio.swift`.
 
@@ -82,7 +82,7 @@ Verificação offline já passou: salvar, aplicar, substituir, apagar, guardar e
 - [ ] Feche com Cmd+Q e reabra: os perfis continuam lá?
 
 ## Interface nativa nova (aguardando você)
-Rode: `pkill -x Anyspace; sleep 1; open ~/anyspace/build/Anyspace.app`. Na primeira vez as boas-vindas aparecem e o efeito só liga em "Ligar e começar". Para vê-las de novo: `defaults delete dev.marco.anyspace didSeeWelcome`.
+Rode: `pkill -x Binaura; sleep 1; open ~/anyspace/build/Binaura.app`. Na primeira vez as boas-vindas aparecem e o efeito só liga em "Ligar e começar". Para vê-las de novo: `defaults delete dev.marco.binaura didSeeWelcome`.
 
 O revisor independente conferiu o palco, o painel da barra de menu, as boas-vindas, o teste cego e o estado desligado/erro por captura. **O inspetor, a janela de câmera e o menu Perfis não puderam ser capturados** (formulários com rolagem), então confira estes com os seus olhos:
 - [ ] Inspetor: com 1 app e com 6+ apps, a lista de fontes não colapsa nem tem rolagem estranha, e o detalhe da fonte selecionada fica visível?

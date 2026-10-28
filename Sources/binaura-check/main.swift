@@ -1,5 +1,5 @@
 import AVFoundation
-import AnyspaceCore
+import BinauraCore
 
 // Verificação offline do espaço 3D: renderiza ruído em vários ângulos, sem usar o fone,
 // e confere se o ouvido certo recebe o som mais forte e mais cedo.
@@ -139,7 +139,7 @@ print("\nCena, mapa e processos")
 var scene = SoundScene()
 scene.apps.append(SourceSetting(id: "com.spotify.client", name: "Spotify", angle: -60, distance: 2.5, volume: 0.7, muted: true))
 scene.width = 20
-let tmp = FileManager.default.temporaryDirectory.appendingPathComponent("anyspace-\(UUID().uuidString).json")
+let tmp = FileManager.default.temporaryDirectory.appendingPathComponent("binaura-\(UUID().uuidString).json")
 SceneStore.save(scene, to: tmp)
 expect(SceneStore.load(from: tmp) == scene, "cena salva e carregada em JSON é idêntica")
 try? FileManager.default.removeItem(at: tmp)
@@ -176,17 +176,19 @@ expect(withProfiles.profiles.count == 2, "salvar com o mesmo nome substitui")
 expect(!withProfiles.applyProfile(named: "inexistente"), "perfil inexistente não faz nada")
 withProfiles.deleteProfile(named: "Filme")
 expect(withProfiles.profiles.map(\.name) == ["Trabalho"], "apagar remove só o escolhido")
-let profileURL = FileManager.default.temporaryDirectory.appendingPathComponent("anyspace-p-\(UUID().uuidString).json")
+let profileURL = FileManager.default.temporaryDirectory.appendingPathComponent("binaura-p-\(UUID().uuidString).json")
 SceneStore.save(withProfiles, to: profileURL)
 expect(SceneStore.load(from: profileURL) == withProfiles, "perfis sobrevivem a salvar e carregar")
 try? FileManager.default.removeItem(at: profileURL)
 let oldJSON = #"{"rest":{"id":"rest","name":"Resto do sistema","angle":-21,"distance":0.5,"volume":1,"muted":false},"apps":[],"width":30}"#
-let oldURL = FileManager.default.temporaryDirectory.appendingPathComponent("anyspace-old-\(UUID().uuidString).json")
+let oldURL = FileManager.default.temporaryDirectory.appendingPathComponent("binaura-old-\(UUID().uuidString).json")
 try? oldJSON.write(to: oldURL, atomically: true, encoding: .utf8)
 let loadedOld = SceneStore.load(from: oldURL)
 expect(loadedOld.rest.angle == -21 && loadedOld.profiles.isEmpty && loadedOld.algorithm == "HRTFHQ",
        "arquivo de versão antiga (sem campos novos) mantém o que existe e completa o resto")
 try? FileManager.default.removeItem(at: oldURL)
+
+expect(SceneStore.url.path.hasSuffix("Binaura/scene.json"), "a cena fica na pasta Binaura")
 
 print("\nFila circular")
 let ring = MonoRingBuffer(capacityPowerOfTwo: 1024, maxFill: 300, targetFill: 100)

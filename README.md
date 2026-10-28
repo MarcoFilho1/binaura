@@ -1,4 +1,4 @@
-# Anyspace
+# Binaura
 
 Áudio espacial para o Mac com um fone comum: o som de cada aplicativo parece vir de um lugar fixo ao seu redor, e o espaço "fica parado" quando você vira a cabeça (rastreada pela webcam).
 
@@ -7,7 +7,7 @@ Feito para o fone QCY HT05 no macOS 15+, sem driver de áudio e sem Xcode.
 ## Como funciona
 
 ```
-Apps do Mac ─▶ Core Audio Tap (captura e silencia o original) ─▶ Anyspace
+Apps do Mac ─▶ Core Audio Tap (captura e silencia o original) ─▶ Binaura
                                                                  │ HRTF: posiciona cada fonte
 Webcam ─▶ Vision ─▶ ângulo da cabeça ─▶ gira o espaço ──────────▶│
                                                                  ▼
@@ -23,8 +23,8 @@ Webcam ─▶ Vision ─▶ ângulo da cabeça ─▶ gira o espaço ───�
 ## Compilar e abrir
 
 ```
-./scripts/build-app.sh          # gera build/Anyspace.app e build/AnyspaceCLI.app
-open build/Anyspace.app         # feche com Cmd+Q antes de abrir uma versão nova
+./scripts/build-app.sh          # gera build/Binaura.app e build/BinauraCLI.app
+open build/Binaura.app         # feche com Cmd+Q antes de abrir uma versão nova
 ```
 
 Permissões pedidas pelo macOS: gravação de áudio e câmera.
@@ -32,7 +32,7 @@ Permissões pedidas pelo macOS: gravação de áudio e câmera.
 ## Verificação sem fone
 
 ```
-swift run anyspace-check
+swift run binaura-check
 ```
 Renderiza o espaço 3D offline e confere direção, distância, estéreo, filtro da cabeça, cena, perfis, mapa e rede (loopback).
 

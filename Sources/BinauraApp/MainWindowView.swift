@@ -1,4 +1,4 @@
-import AnyspaceCore
+import BinauraCore
 import SwiftUI
 
 /// Janela principal: palco à esquerda, inspetor à direita, toolbar unificada.
@@ -15,7 +15,7 @@ struct MainWindowView: View {
             .inspector(isPresented: $showInspector) {
                 InspectorView().inspectorColumnWidth(min: 300, ideal: 340, max: 440)
             }
-            .navigationTitle("Anyspace")
+            .navigationTitle("Binaura")
             .navigationSubtitle(model.effectOn ? "Ligado · \(model.outputName)" : "Desligado")
             .toolbar {
                 ToolbarItem(placement: .navigation) {

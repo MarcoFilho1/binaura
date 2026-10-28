@@ -1,7 +1,7 @@
 #!/bin/zsh
 # Compila e monta dois apps assinados ad-hoc em build/:
-#   Anyspace.app     interface gráfica (mapa, barra de menu)
-#   AnyspaceCLI.app  linha de comando, para testes (abra com `open -n -W --stdout log AnyspaceCLI.app --args ...`)
+#   Binaura.app     interface gráfica (mapa, barra de menu)
+#   BinauraCLI.app  linha de comando, para testes (abra com `open -n -W --stdout log BinauraCLI.app --args ...`)
 set -euo pipefail
 cd "$(dirname "$0")/.."
 
@@ -26,8 +26,8 @@ make_app() {  # nome, executável compilado, id do bundle, LSUIElement
   <key>LSMinimumSystemVersion</key><string>15.0</string>
   <key>LSUIElement</key><$4/>
   <key>NSHighResolutionCapable</key><true/>
-  <key>NSAudioCaptureUsageDescription</key><string>O Anyspace captura o som do Mac para posicioná-lo no espaço no seu fone.</string>
-  <key>NSCameraUsageDescription</key><string>O Anyspace usa a câmera para medir a rotação da sua cabeça.</string>
+  <key>NSAudioCaptureUsageDescription</key><string>O Binaura captura o som do Mac para posicioná-lo no espaço no seu fone.</string>
+  <key>NSCameraUsageDescription</key><string>O Binaura usa a câmera para medir a rotação da sua cabeça.</string>
 </dict>
 </plist>
 PLIST
@@ -35,5 +35,5 @@ PLIST
   echo "Pronto: $app"
 }
 
-make_app Anyspace AnyspaceApp dev.marco.anyspace false
-make_app AnyspaceCLI anyspace dev.marco.anyspace.cli true
+make_app Binaura BinauraApp dev.marco.binaura false
+make_app BinauraCLI binaura dev.marco.binaura.cli true

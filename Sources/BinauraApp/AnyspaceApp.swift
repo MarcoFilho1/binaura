@@ -11,16 +11,16 @@ enum Launcher {
             let dark = CommandLine.arguments.contains("--dark")
             MainActor.assumeIsolated { Snapshot.show(name: CommandLine.arguments[i + 1], seconds: 12, dark: dark) }
         } else {
-            AnyspaceApp.main()
+            BinauraApp.main()
         }
     }
 }
 
-struct AnyspaceApp: App {
+struct BinauraApp: App {
     @StateObject private var model = AppModel(startEffect: !CommandLine.arguments.contains("--no-start") && UserDefaults.standard.bool(forKey: "didSeeWelcome"))
 
     var body: some Scene {
-        Window("Anyspace", id: "main") {
+        Window("Binaura", id: "main") {
             MainWindowView()
                 .environmentObject(model)
                 .onReceive(NotificationCenter.default.publisher(for: NSApplication.willTerminateNotification)) { _ in
@@ -40,7 +40,7 @@ struct AnyspaceApp: App {
         } label: {
             Image(systemName: model.message != nil && !model.effectOn ? "exclamationmark.triangle.fill"
                   : (model.effectOn ? "waveform.circle.fill" : "waveform.circle"))
-                .accessibilityLabel("Anyspace, efeito \(model.effectOn ? "ligado" : "desligado")\(model.message != nil ? ", com aviso" : "")")
+                .accessibilityLabel("Binaura, efeito \(model.effectOn ? "ligado" : "desligado")\(model.message != nil ? ", com aviso" : "")")
         }
         .menuBarExtraStyle(.window)
     }

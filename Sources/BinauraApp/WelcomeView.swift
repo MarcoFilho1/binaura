@@ -10,14 +10,14 @@ struct WelcomeView: View {
                 Image(systemName: "waveform.circle.fill")
                     .font(.system(size: 52)).foregroundStyle(Color.accentColor)
                     .accessibilityHidden(true)
-                Text("Bem-vindo ao Anyspace").font(.title.weight(.semibold))
+                Text("Bem-vindo ao Binaura").font(.title.weight(.semibold))
                 Text("Coloque cada app em um lugar ao seu redor, com o fone que você já tem.")
                     .font(.body).foregroundStyle(.secondary).multilineTextAlignment(.center)
                     .fixedSize(horizontal: false, vertical: true)
             }
             VStack(alignment: .leading, spacing: Space.l) {
                 step("headphones", "Use fones de ouvido", "O efeito foi feito para fones. Nos alto-falantes do Mac ele quase não aparece.")
-                step("waveform", "Permita a captura de áudio", "O macOS vai pedir. O Anyspace precisa ouvir o som dos apps para posicioná-lo e silencia o original enquanto está ligado.")
+                step("waveform", "Permita a captura de áudio", "O macOS vai pedir. O Binaura precisa ouvir o som dos apps para posicioná-lo e silencia o original enquanto está ligado.")
                 step("camera", "A câmera é opcional", "Se quiser que o espaço fique parado quando você vira a cabeça, ligue “Acompanhar a cabeça”. Ela só funciona com som tocando.")
                 step("power", "Desligar devolve o som normal", "O interruptor no topo da janela e na barra de menu desfaz tudo na hora.")
             }

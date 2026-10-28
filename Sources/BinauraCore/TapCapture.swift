@@ -53,14 +53,14 @@ public final class TapCapture {
             if selfProcess != kAudioObjectUnknown { all.append(selfProcess) }
             description = CATapDescription(stereoGlobalTapButExcludeProcesses: all)
         }
-        description.name = "Anyspace"
+        description.name = "Binaura"
         description.isPrivate = true
         description.muteBehavior = muteOriginal ? .muted : .unmuted
         var status = AudioHardwareCreateProcessTap(description, &tapID)
         guard status == noErr else { return "criar tap (OSStatus \(status)); permissão de áudio concedida?" }
 
         let aggregate: [String: Any] = [
-            kAudioAggregateDeviceNameKey: "Anyspace",
+            kAudioAggregateDeviceNameKey: "Binaura",
             kAudioAggregateDeviceUIDKey: UUID().uuidString,
             kAudioAggregateDeviceMainSubDeviceKey: outputUID,
             kAudioAggregateDeviceIsPrivateKey: true,

@@ -1,4 +1,4 @@
-import AnyspaceCore
+import BinauraCore
 import AppKit
 import SwiftUI
 
@@ -43,7 +43,7 @@ enum Snapshot {
             ("camera", AnyView(CameraDebugView().background(Color(nsColor: .windowBackgroundColor))), NSSize(width: 480, height: 700)),
         ]
         let off = AppModel(startEffect: false, preview: sampleScene())
-        off.message = "Não consegui capturar o som (permissão de áudio negada). Libere o Anyspace em Ajustes do Sistema > Privacidade e Segurança > Gravação de Áudio do Sistema."
+        off.message = "Não consegui capturar o som (permissão de áudio negada). Libere o Binaura em Ajustes do Sistema > Privacidade e Segurança > Gravação de Áudio do Sistema."
         shots.append(("janela-desligado", AnyView(MainWindowView().environmentObject(off)), NSSize(width: 1080, height: 700)))
 
         for (name, view, size) in shots {
@@ -90,7 +90,7 @@ enum Snapshot {
         }
         let window = NSWindow(contentViewController: NSHostingController(rootView: root))
         window.styleMask = [.titled, .closable, .resizable, .fullSizeContentView]
-        window.title = "Anyspace"
+        window.title = "Binaura"
         window.appearance = NSAppearance(named: dark ? .darkAqua : .aqua)
         window.setContentSize(size)
         window.setFrameOrigin(NSPoint(x: 60, y: 60))
@@ -107,7 +107,7 @@ enum Snapshot {
         let window = NSWindow(contentViewController: host)
         window.styleMask = [.titled, .closable, .resizable, .fullSizeContentView]
         window.appearance = appearance
-        window.title = "Anyspace"
+        window.title = "Binaura"
         window.setContentSize(size)
         window.setFrameOrigin(NSPoint(x: 40, y: 80))
         NSApp.activate(ignoringOtherApps: true)

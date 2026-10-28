@@ -1,4 +1,4 @@
-# Anyspace: plano de desenvolvimento completo (v2, 2026-10-28)
+# Binaura: plano de desenvolvimento completo (v2, 2026-10-28)
 
 > **Estado (2026-10-28):** fases 0–5 implementadas em branches empilhadas; só as fases 0 e 1 (parcialmente) foram ouvidas por você. O restante aguarda `VALIDACAO.md`. Decisões minhas em `DECISOES.md`.
 
@@ -15,7 +15,7 @@ Fazer o som do Mac parecer vir de lugares fixos no espaço (tela na frente, note
 
 ## 3. Como o som flui
 ```
-Apps do Mac ─▶ [Tap captura e silencia a saída original] ─▶ Anyspace
+Apps do Mac ─▶ [Tap captura e silencia a saída original] ─▶ Binaura
                                                             │ posiciona no espaço (HRTF)
 Webcam ─▶ Vision ─▶ ângulo da cabeça ─▶ gira o espaço ─────▶│
                                                             ▼
@@ -45,7 +45,7 @@ Tarefas
 1. Pacote Swift, captura com Core Audio Tap excluindo o próprio processo (evita eco).
 2. Dispositivo agregado + reprodução no fone, silenciando a saída original.
 3. Medidor de nível e relatório de atraso declarado.
-4. Script que gera `Anyspace.app` com Info.plist (descrições de permissão) e assinatura ad-hoc.
+4. Script que gera `Binaura.app` com Info.plist (descrições de permissão) e assinatura ad-hoc.
 5. Timeout opcional (`--seconds N`) para devolver o som sozinho.
 Entrega: o som do Mac passa pelo app e sai no fone sem cortes.
 Validação sua: tocar um vídeo, ouvir sem estalos; aceitar a permissão de áudio.
@@ -56,7 +56,7 @@ Tarefas
 2. Comandos de teste: ângulo e distância via linha de comando.
 3. Teste automático offline: renderiza uma varredura de ângulos e confere que o canal do lado certo fica mais forte e mais cedo (diferença de nível e de tempo entre os ouvidos).
 4. Medir o atraso extra que o motor adiciona (alvo: menos de 20 ms).
-Entrega: `anyspace --angle 90` põe o som à direita.
+Entrega: `binaura --angle 90` põe o som à direita.
 Validação sua: tocar uma música e confirmar esquerda/direita/atrás/frente.
 
 ### Fase 2: Cabeça pela webcam
