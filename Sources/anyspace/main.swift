@@ -9,6 +9,7 @@ import Foundation
 //   --head         liga o rastreio da cabeça pela webcam (o espaço fica parado quando você vira)
 //   --camera NOME  escolhe a câmera pelo nome (ex.: --camera C922); padrão: a do Mac
 //   --invert       inverte o sentido do ângulo da cabeça (se a câmera for espelhada)
+//   --send HOST:PORTA --password SENHA   em vez de tocar, envia o som deste Mac para outro Anyspace pela rede
 //   --seconds N    encerra sozinho e devolve o som ao normal
 //   Para recalibrar o centro da cabeça: pkill -USR1 AnyspaceCLI
 
@@ -17,6 +18,26 @@ setvbuf(stdout, nil, _IOLBF, 0)
 func option(_ name: String) -> String? {
     guard let i = CommandLine.arguments.firstIndex(of: name), CommandLine.arguments.count > i + 1 else { return nil }
     return CommandLine.arguments[i + 1]
+}
+
+if let target = option("--send") {
+    // Modo remetente: captura o som do sistema (sem silenciá-lo aqui) e manda por UDP.
+    let parts = target.split(separator: ":")
+    guard parts.count == 2, let port = UInt16(parts[1]), let password = option("--password") else {
+        fputs("uso: --send HOST:PORTA --password SENHA\n", stderr); exit(2)
+    }
+    let left = MonoRingBuffer(), right = MonoRingBuffer()
+    let tap = TapCapture(target: .restOfSystem(excluding: []), outputDevice: defaultOutputDevice(),
+                         left: left, right: right, muteOriginal: false)
+    if let error = tap.start() { fputs("erro: \(error)\n", stderr); exit(1) }
+    let sender = UDPAudioSender(host: String(parts[0]), port: port, password: password, left: left, right: right)
+    sender.start()
+    print("Enviando o som deste Mac para \(target). Ctrl+C para sair.")
+    if let seconds = option("--seconds").flatMap(Double.init) {
+        DispatchQueue.main.asyncAfter(deadline: .now() + seconds) { sender.stop(); tap.stop(); exit(0) }
+    }
+    signal(SIGINT) { _ in exit(0) }
+    RunLoop.main.run()
 }
 
 var scene = SoundScene()

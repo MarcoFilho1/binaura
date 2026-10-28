@@ -66,3 +66,10 @@ Cabeça e bateria
 - [ ] "Acompanhar a cabeça": mesma checklist da fase 2, agora dentro da janela (o triângulo no mapa gira com a cabeça).
 - [ ] Pausa o som por 10 s: a câmera desliga ("Câmera pausada: sem som tocando")? E volta quando o som volta?
 - [ ] "Abrir ao iniciar o Mac" funciona? (pode falhar sem o app estar em /Applications; me conte a mensagem)
+
+## Fase 5: áudio de outro dispositivo (versão mínima, aguardando você)
+Verificação offline já passou em loopback (pacote, senha errada rejeitada, áudio chega igual). Não testado entre dois aparelhos reais.
+- [ ] No app: defina uma senha, porta 5004, "Receber áudio nessa porta". Uma bolinha "Rede 5004" aparece no mapa.
+- [ ] Em outro Mac (ou neste, em outro terminal): `build/AnyspaceCLI.app/Contents/MacOS/AnyspaceCLI --send IP:5004 --password SENHA`. O som do outro Mac sai na bolinha?
+- [ ] Atraso e falhas na sua rede Wi-Fi? (PCM sem compressão ≈ 1,5 Mbit/s)
+- [ ] Windows/Android ainda não têm remetente; o formato do pacote está em `NetworkAudio.swift`.

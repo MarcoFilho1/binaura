@@ -142,6 +142,14 @@ final class AppModel: ObservableObject {
         scene.apps.append(SourceSetting(id: app.id, name: app.name, angle: angle, distance: 1.5))
     }
 
+    func addNetworkSource(port: UInt16) {
+        let id = "net:\(port)"
+        guard !scene.apps.contains(where: { $0.id == id }) else { return }
+        scene.apps.append(SourceSetting(id: id, name: "Rede \(port)", angle: -80, distance: 1.5))
+        if effectOn { session.start() }
+        message = session.lastError
+    }
+
     func removeApp(_ id: String) { scene.apps.removeAll { $0.id == id } }
 
     func calibrate() { head.calibrate(); headStatus = "Centro recalibrado" }
