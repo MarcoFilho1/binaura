@@ -20,3 +20,22 @@ Para ouvir, troque o valor de `--angle`:
 - [ ] `--angle 45 --distance 3`: parece mais longe e mais baixo que a 1 m?
 - [ ] Qualidade: chiado, estalos, o som ficou abafado ou metálico demais?
 - [ ] Atraso: o vídeo continua sincronizado?
+
+## Fase 2: cabeça pela webcam (aguardando você)
+Verificação offline já passou: com a cabeça virada 45° à direita a fonte da frente vai para o ouvido esquerdo (e vice-versa); fonte a 45° + cabeça 45° volta ao centro; filtro sem tremor, mantém o ângulo por 1,5 s se o rosto sumir e volta ao centro depois.
+
+Comando (câmera do Mac; a primeira vez o macOS pede permissão de câmera, aceite e rode de novo):
+
+    cd ~/anyspace && ./scripts/build-app.sh
+    open -n -W --stdout ~/anyspace/build/fase2.log build/Anyspace.app --args --head --angle 0 --seconds 40
+    # e em outro terminal: tail -f ~/anyspace/build/fase2.log
+
+Nos 2 primeiros segundos olhe para a tela (calibra o centro). Depois:
+- [ ] Vire a cabeça para a DIREITA: o log mostra "direita"? O som da frente vai para o ouvido ESQUERDO?
+- [ ] Vire para a ESQUERDA: o log mostra "esquerda"? O som vai para o DIREITO?
+- [ ] Se o sentido estiver ao contrário, rode de novo com `--invert` (e me avise).
+- [ ] O som treme parado olhando para a tela? Quanto atrasa ao virar?
+- [ ] "rosto em X de Y quadros": quantos quadros acham seu rosto (com boa luz deveria ser ~tudo)?
+- [ ] Recalibrar: em outro terminal, `pkill -USR1 anyspace`.
+- [ ] Com a C922: adicione `--camera C922`.
+- [ ] Rosto muito virado (>60°): o som mantém o último ângulo e depois volta ao centro?
