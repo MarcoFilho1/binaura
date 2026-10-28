@@ -40,10 +40,14 @@ public final class SpatialEngine {
         source.position = position(angleDegrees: angleDegrees, distance: distance)
     }
 
-    /// Rotação da cabeça do ouvinte, em graus (usada na fase 2).
-    public func setListenerYaw(degrees: Float) {
-        environment.listenerAngularOrientation = AVAudio3DAngularOrientation(yaw: degrees, pitch: 0, roll: 0)
+    /// Quanto a cabeça virou, em graus: positivo = virou para a direita.
+    /// As fontes ficam paradas no espaço, então ao virar para a direita uma fonte à frente passa para a esquerda.
+    public func setHeadYaw(degrees: Float) {
+        environment.listenerAngularOrientation = AVAudio3DAngularOrientation(yaw: headYawSign * degrees, pitch: 0, roll: 0)
     }
+
+    /// Sinal que converte "virou para a direita" no `yaw` do AVAudioEnvironmentNode (conferido por anyspace-check).
+    let headYawSign: Float = 1
 
     public func start() throws { try engine.start() }
     public func stop() { engine.stop() }
