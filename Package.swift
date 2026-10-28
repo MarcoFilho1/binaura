@@ -7,6 +7,7 @@ let package = Package(
     targets: [
         .target(name: "AnyspaceCore", path: "Sources/AnyspaceCore"),
         .executableTarget(name: "anyspace", dependencies: ["AnyspaceCore"], path: "Sources/anyspace"),
+        .executableTarget(name: "AnyspaceApp", dependencies: ["AnyspaceCore"], path: "Sources/AnyspaceApp"),
         .executableTarget(name: "anyspace-check", dependencies: ["AnyspaceCore"], path: "Sources/anyspace-check"),
     ]
 )
