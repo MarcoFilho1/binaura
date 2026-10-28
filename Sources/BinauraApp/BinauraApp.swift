@@ -7,6 +7,8 @@ enum Launcher {
     static func main() {
         if let i = CommandLine.arguments.firstIndex(of: "--snapshot"), CommandLine.arguments.count > i + 1 {
             MainActor.assumeIsolated { Snapshot.run(into: CommandLine.arguments[i + 1]) }
+        } else if let i = CommandLine.arguments.firstIndex(of: "--icon"), CommandLine.arguments.count > i + 1 {
+            MainActor.assumeIsolated { IconExport.run(into: CommandLine.arguments[i + 1]) }
         } else if let i = CommandLine.arguments.firstIndex(of: "--show"), CommandLine.arguments.count > i + 1 {
             let dark = CommandLine.arguments.contains("--dark")
             MainActor.assumeIsolated { Snapshot.show(name: CommandLine.arguments[i + 1], seconds: 12, dark: dark) }
