@@ -48,6 +48,9 @@ print(String(format: "Atraso declarado: entrada %.1f ms + saída %.1f ms (o Blue
              latencyMs(aggregateID, scope: kAudioObjectPropertyScopeInput),
              latencyMs(aggregateID, scope: kAudioObjectPropertyScopeOutput)))
 
+// --teste: só o ouvido esquerdo recebe som, para você notar se o Anyspace está mesmo no caminho.
+let leftOnlyTest = CommandLine.arguments.contains("--teste")
+
 // Pico do último bloco, só para mostrar que o som está passando.
 let peak = UnsafeMutablePointer<Float>.allocate(capacity: 1)
 peak.pointee = 0
@@ -63,6 +66,11 @@ check(AudioDeviceCreateIOProcIDWithBlock(&procID, aggregateID, nil) { _, inData,
     memcpy(destData, sourceData, bytes)
     if bytes < Int(first.mDataByteSize) {
         memset(destData + bytes, 0, Int(first.mDataByteSize) - bytes)
+    }
+
+    if leftOnlyTest {
+        let out = destData.assumingMemoryBound(to: Float.self)
+        for i in stride(from: 1, to: bytes / MemoryLayout<Float>.size, by: 2) { out[i] = 0 }
     }
 
     let samples = sourceData.assumingMemoryBound(to: Float.self)
