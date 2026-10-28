@@ -1,90 +1,49 @@
+import AnyspaceCore
 import CoreAudio
 import Foundation
 
-// Fase 0: captura todo o som do sistema (menos o do próprio Anyspace),
-// silencia a saída original e toca o mesmo som no dispositivo de saída padrão.
+// Anyspace: captura o som do Mac e o coloca em um ponto do espaço 3D no fone.
+//
+//   --angle N      direção da fonte em graus: 0 frente, 90 direita, -90 esquerda, 180 atrás (padrão 0)
+//   --distance D   distância em metros (padrão 1)
+//   --seconds N    encerra sozinho e devolve o som ao normal
 
 setvbuf(stdout, nil, _IOLBF, 0)
 
-let outputDevice = defaultOutputDevice()
-let outputUID = stringProperty(outputDevice, kAudioDevicePropertyDeviceUID)
-let outputName = stringProperty(outputDevice, kAudioObjectPropertyName)
-print("Saída: \(outputName)")
-
-let selfProcess = ownProcessObject(registeringOn: outputDevice)
-if selfProcess == kAudioObjectUnknown {
-    fputs("aviso: não achei o processo do Anyspace; o som pode realimentar\n", stderr)
+func option(_ name: String) -> Double? {
+    guard let i = CommandLine.arguments.firstIndex(of: name), CommandLine.arguments.count > i + 1 else { return nil }
+    return Double(CommandLine.arguments[i + 1])
 }
 
-let tapDescription = CATapDescription(
-    stereoGlobalTapButExcludeProcesses: selfProcess == kAudioObjectUnknown ? [] : [selfProcess]
-)
-tapDescription.name = "Anyspace"
-tapDescription.isPrivate = true
-tapDescription.muteBehavior = .muted
+let angle = Float(option("--angle") ?? 0)
+let distance = Float(option("--distance") ?? 1)
 
-var tapID = AudioObjectID(kAudioObjectUnknown)
-check(AudioHardwareCreateProcessTap(tapDescription, &tapID), "criar tap (permissão de áudio concedida?)")
+let ring = MonoRingBuffer()
+let capture = TapCapture()
+print("Saída: \(stringProperty(capture.outputDevice, kAudioObjectPropertyName))")
 
-let aggregate: [String: Any] = [
-    kAudioAggregateDeviceNameKey: "Anyspace",
-    kAudioAggregateDeviceUIDKey: UUID().uuidString,
-    kAudioAggregateDeviceMainSubDeviceKey: outputUID,
-    kAudioAggregateDeviceIsPrivateKey: true,
-    kAudioAggregateDeviceIsStackedKey: false,
-    kAudioAggregateDeviceTapAutoStartKey: true,
-    kAudioAggregateDeviceSubDeviceListKey: [[kAudioSubDeviceUIDKey: outputUID]],
-    kAudioAggregateDeviceTapListKey: [[
-        kAudioSubTapDriftCompensationKey: true,
-        kAudioSubTapUIDKey: tapDescription.uuid.uuidString,
-    ]],
-]
-var aggregateID = AudioObjectID(kAudioObjectUnknown)
-check(AudioHardwareCreateAggregateDevice(aggregate as CFDictionary, &aggregateID), "criar dispositivo agregado")
+let spatial = SpatialEngine(sampleRate: 48000) { out, count in ring.read(into: out, count: count) }
+capture.start(into: ring)
+if capture.sampleRate != 48000 {
+    fputs("aviso: o dispositivo está em \(capture.sampleRate) Hz; esta versão espera 48000 Hz\n", stderr)
+}
 
-print("Entradas do agregado (canais por buffer): \(streamLayout(aggregateID, scope: kAudioObjectPropertyScopeInput))")
-print("Saídas do agregado (canais por buffer): \(streamLayout(aggregateID, scope: kAudioObjectPropertyScopeOutput))")
-print(String(format: "Atraso declarado: entrada %.1f ms + saída %.1f ms (o Bluetooth real é maior e não aparece aqui)",
-             latencyMs(aggregateID, scope: kAudioObjectPropertyScopeInput),
-             latencyMs(aggregateID, scope: kAudioObjectPropertyScopeOutput)))
-
-// Pico do último bloco, só para mostrar que o som está passando.
-let peak = UnsafeMutablePointer<Float>.allocate(capacity: 1)
-peak.pointee = 0
-
-var procID: AudioDeviceIOProcID?
-check(AudioDeviceCreateIOProcIDWithBlock(&procID, aggregateID, nil) { _, inData, _, outData, _ in
-    let inputs = UnsafeMutableAudioBufferListPointer(UnsafeMutablePointer(mutating: inData))
-    let outputs = UnsafeMutableAudioBufferListPointer(outData)
-    guard let source = inputs.last, let sourceData = source.mData,
-          let first = outputs.first, let destData = first.mData else { return }
-
-    let bytes = Int(min(source.mDataByteSize, first.mDataByteSize))
-    memcpy(destData, sourceData, bytes)
-    if bytes < Int(first.mDataByteSize) {
-        memset(destData + bytes, 0, Int(first.mDataByteSize) - bytes)
-    }
-
-    let samples = sourceData.assumingMemoryBound(to: Float.self)
-    var maxValue: Float = 0
-    for i in 0..<(bytes / MemoryLayout<Float>.size) { maxValue = max(maxValue, abs(samples[i])) }
-    peak.pointee = max(peak.pointee, maxValue)
-}, "criar IOProc")
-check(AudioDeviceStart(aggregateID, procID), "iniciar áudio")
-print("Rodando. Toque algo no Mac e ouça no fone. Ctrl+C para sair.")
+spatial.setSource(angleDegrees: angle, distance: distance)
+do { try spatial.start() } catch {
+    fputs("erro ao iniciar o motor de áudio: \(error)\n", stderr)
+    capture.stop()
+    exit(1)
+}
+print(String(format: "Fonte a %.0f° e %.1f m. Ctrl+C para sair.", angle, distance))
 
 func shutdown() {
-    AudioDeviceStop(aggregateID, procID)
-    AudioDeviceDestroyIOProcID(aggregateID, procID!)
-    AudioHardwareDestroyAggregateDevice(aggregateID)
-    AudioHardwareDestroyProcessTap(tapID)
+    spatial.stop()
+    capture.stop()
     print("\nEncerrado; o som volta ao normal.")
     exit(0)
 }
 
-// --seconds N: encerra sozinho e devolve o som ao normal (rede de segurança para testes).
-if let flag = CommandLine.arguments.firstIndex(of: "--seconds"),
-   CommandLine.arguments.count > flag + 1, let seconds = Double(CommandLine.arguments[flag + 1]) {
+if let seconds = option("--seconds") {
     print("Encerra sozinho em \(Int(seconds)) s.")
     DispatchQueue.main.asyncAfter(deadline: .now() + seconds) { shutdown() }
 }
@@ -99,10 +58,9 @@ let signals = [SIGINT, SIGTERM].map { sig -> DispatchSourceSignal in
 }
 
 let meter = Timer.scheduledTimer(withTimeInterval: 1, repeats: true) { _ in
-    let level = peak.pointee
-    peak.pointee = 0
-    let bars = String(repeating: "█", count: min(30, Int(level * 30)))
-    print(String(format: "nível %.3f ", level) + bars)
+    let level = capture.peak.pointee
+    capture.peak.pointee = 0
+    print(String(format: "nível %.3f ", level) + String(repeating: "█", count: min(30, Int(level * 30))))
 }
 _ = meter
 RunLoop.main.run()
