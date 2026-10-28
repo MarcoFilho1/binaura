@@ -20,9 +20,9 @@ basicConstraints = critical,CA:false
 keyUsage = critical,digitalSignature
 extendedKeyUsage = critical,codeSigning
 CNF
-openssl req -x509 -newkey rsa:2048 -nodes -days 3650 -config "$WORK/openssl.cnf" \
+/usr/bin/openssl req -x509 -newkey rsa:2048 -nodes -days 3650 -config "$WORK/openssl.cnf" \
   -keyout "$WORK/key.pem" -out "$WORK/cert.pem" 2>/dev/null
-openssl pkcs12 -export -inkey "$WORK/key.pem" -in "$WORK/cert.pem" -name "$NAME" \
+/usr/bin/openssl pkcs12 -export -inkey "$WORK/key.pem" -in "$WORK/cert.pem" -name "$NAME" \
   -out "$WORK/cert.p12" -passout pass:binaura 2>/dev/null
 security import "$WORK/cert.p12" -k "$HOME/Library/Keychains/login.keychain-db" -P binaura -T /usr/bin/codesign >/dev/null
 echo "Certificado \"$NAME\" criado no chaveiro de login."
