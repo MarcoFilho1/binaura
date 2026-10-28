@@ -6,6 +6,13 @@ import Vision
 /// `onYaw` recebe o ângulo bruto em graus (nil quando não há rosto) a cada quadro, em uma fila de fundo.
 public final class HeadTracker: NSObject, AVCaptureVideoDataOutputSampleBufferDelegate {
     private let session = AVCaptureSession()
+    private let boxLock = NSLock()
+    private var box: CGRect?
+
+    /// Para mostrar a imagem da câmera na janela de depuração.
+    public var previewSession: AVCaptureSession { session }
+    /// Retângulo do rosto (0...1, origem embaixo à esquerda, imagem sem espelhar), ou nil.
+    public var faceBox: CGRect? { boxLock.lock(); defer { boxLock.unlock() }; return box }
     private let queue = DispatchQueue(label: "anyspace.head")
     private let onYaw: (Float?) -> Void
     private let sign: Float
@@ -62,6 +69,7 @@ public final class HeadTracker: NSObject, AVCaptureVideoDataOutputSampleBufferDe
 
         // Com vários rostos, usa o maior (o mais perto da câmera).
         let face = request.results?.max { $0.boundingBox.width < $1.boundingBox.width }
+        boxLock.lock(); box = face?.boundingBox; boxLock.unlock()
         if let yaw = face?.yaw?.floatValue {
             onYaw(sign * yaw * 180 / .pi)
         } else {

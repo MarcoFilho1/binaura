@@ -1,4 +1,5 @@
 import AnyspaceCore
+import AVFoundation
 import AppKit
 import Foundation
 import ServiceManagement
@@ -7,8 +8,12 @@ import ServiceManagement
 final class HeadValue: @unchecked Sendable {
     private let lock = NSLock()
     private var value: Float = 0
+    private var apply = false
     func set(_ v: Float) { lock.lock(); value = v; lock.unlock() }
     func get() -> Float { lock.lock(); defer { lock.unlock() }; return value }
+    /// Só gira o espaço quando o acompanhamento está ligado (a câmera de debug não deve girar o som).
+    func setApply(_ on: Bool) { lock.lock(); apply = on; lock.unlock() }
+    func shouldApply() -> Bool { lock.lock(); defer { lock.unlock() }; return apply }
 }
 
 @MainActor
@@ -20,6 +25,12 @@ final class AppModel: ObservableObject {
     @Published var headStatus = "Rastreio desligado"
     @Published var message: String?
     @Published var cameras: [String] = []
+    @Published var headRaw: Float?
+    @Published var faceBox: CGRect?
+    @Published var debugCameraOpen = false { didSet { tick() } }
+    private var lastCamera = ""
+    private var lastInvert = false
+    var previewSession: AVCaptureSession? { head.previewSession }
 
     let session: Session
     private let head: HeadController
@@ -36,8 +47,11 @@ final class AppModel: ObservableObject {
         let session = session
         head = HeadController { angle in
             value.set(angle)
-            session.setHeadYaw(degrees: angle)
+            if value.shouldApply() { session.setHeadYaw(degrees: angle) }
         }
+        lastCamera = scene.cameraName
+        lastInvert = scene.invertHead
+        headValue.setApply(scene.headTracking)
         cameras = HeadTracker.cameras().map(\.localizedName)
         timers.append(Timer.scheduledTimer(withTimeInterval: 2, repeats: true) { [weak self] _ in
             Task { @MainActor in self?.tick() }
@@ -73,14 +87,16 @@ final class AppModel: ObservableObject {
 
     private func tick() {
         availableApps = listAudioApps()
-        guard effectOn else { return }
-        session.refresh()
-        if let error = session.lastError { message = error }
+        cameras = HeadTracker.cameras().map(\.localizedName)
+        if effectOn {
+            session.refresh()
+            if let error = session.lastError { message = error }
+        }
 
-        // Economia de bateria: a câmera só fica ligada quando há som tocando.
-        let level = session.takePeak()
+        // Economia de bateria: a câmera só fica ligada quando há som tocando (ou com a janela de debug aberta).
+        let level = effectOn ? session.takePeak() : 0
         idleSeconds = level > 0.001 ? 0 : idleSeconds + 2
-        let wantCamera = scene.headTracking && idleSeconds < 10
+        let wantCamera = debugCameraOpen || (effectOn && scene.headTracking && idleSeconds < 10)
         if wantCamera && !head.isRunning {
             headStatus = "Ligando a câmera…"
             head.start(cameraName: scene.cameraName, invert: scene.invertHead) { [weak self] error in
@@ -92,12 +108,14 @@ final class AppModel: ObservableObject {
                         self.scene.headTracking = false
                     } else {
                         self.headStatus = "Olhe para a tela por 2 s (calibrando)"
+                        self.objectWillChange.send()
                     }
                 }
             }
         } else if !wantCamera && head.isRunning {
             head.stop()
             headStatus = scene.headTracking ? "Câmera pausada: sem som tocando" : "Rastreio desligado"
+            headRaw = nil; faceBox = nil
         }
     }
 
@@ -108,6 +126,8 @@ final class AppModel: ObservableObject {
         }
         headAngle = headValue.get()
         let stats = head.takeStats()
+        headRaw = stats.raw
+        faceBox = stats.box
         if stats.frames > 0 {
             headStatus = stats.faces == 0 ? "Rosto não encontrado" : String(format: "Cabeça %+.0f°", stats.filtered)
         }
@@ -122,7 +142,14 @@ final class AppModel: ObservableObject {
         let task = DispatchWorkItem { SceneStore.save(snapshot) }
         saveTask = task
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.4, execute: task)
-        if !scene.headTracking && head.isRunning {
+        headValue.setApply(scene.headTracking)
+        // Trocar de câmera ou inverter o sentido reinicia o rastreio na hora.
+        if scene.cameraName != lastCamera || scene.invertHead != lastInvert {
+            lastCamera = scene.cameraName
+            lastInvert = scene.invertHead
+            if head.isRunning { head.stop(); headStatus = "Trocando de câmera…" }
+            DispatchQueue.main.async { [weak self] in self?.tick() }
+        } else if !scene.headTracking && !debugCameraOpen && head.isRunning {
             head.stop()
             headStatus = "Rastreio desligado"
         }

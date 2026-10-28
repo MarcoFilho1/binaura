@@ -1,8 +1,9 @@
+import AVFoundation
 import Foundation
 
 /// Webcam → ângulo bruto → filtro → ângulo suave. Os 2 primeiros segundos definem o centro.
 public final class HeadController {
-    public struct Stats { public var raw: Float?; public var filtered: Float; public var faces: Int; public var frames: Int }
+    public struct Stats { public var raw: Float?; public var filtered: Float; public var faces: Int; public var frames: Int; public var box: CGRect? }
 
     private let lock = NSLock()
     private var filter = HeadFilter()
@@ -14,6 +15,7 @@ public final class HeadController {
     private let onAngle: (Float) -> Void
 
     public var isRunning: Bool { tracker != nil }
+    public var previewSession: AVCaptureSession? { tracker?.previewSession }
 
     public init(onAngle: @escaping (Float) -> Void) { self.onAngle = onAngle }
 
@@ -44,7 +46,7 @@ public final class HeadController {
 
     public func takeStats() -> Stats {
         lock.lock(); defer { lock.unlock() }
-        let s = Stats(raw: raw, filtered: filter.output, faces: faces, frames: frames)
+        let s = Stats(raw: raw, filtered: filter.output, faces: faces, frames: frames, box: tracker?.faceBox)
         faces = 0; frames = 0
         return s
     }

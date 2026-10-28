@@ -216,6 +216,8 @@ do {
     strict.stop()
 } catch { print("erro de rede: \(error)"); failures += 1 }
 
+print("Câmeras encontradas (sem ligar nenhuma): \(HeadTracker.cameras().map(\.localizedName))")
+
 print("\nFiltro da cabeça")
 let dt: Float = 0.05
 var step = HeadFilter()
