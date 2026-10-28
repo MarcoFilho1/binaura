@@ -218,6 +218,14 @@ do {
 
 print("Câmeras encontradas (sem ligar nenhuma): \(HeadTracker.cameras().map(\.localizedName))")
 
+print("\nTroca de saída")
+do {
+    let session = Session(scene: SoundScene())
+    session.rebuild(); session.rebuild()
+    expect(!session.isRunning, "reconstruir sem estar ligado não liga o efeito nem cria taps")
+    expect(SoundScene().invertHead, "sentido da cabeça padrão é o invertido")
+}
+
 print("\nFiltro da cabeça")
 let dt: Float = 0.05
 var step = HeadFilter()

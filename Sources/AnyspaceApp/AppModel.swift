@@ -86,6 +86,7 @@ final class AppModel: ObservableObject {
     // MARK: ciclo periódico
 
     private func tick() {
+        if effectOn != session.isRunning { effectOn = session.isRunning }
         availableApps = listAudioApps()
         cameras = HeadTracker.cameras().map(\.localizedName)
         if effectOn {

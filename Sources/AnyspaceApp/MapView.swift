@@ -26,12 +26,18 @@ struct MapView: View {
 
                 // Você: o triângulo gira com a cabeça.
                 ZStack {
-                    Circle().fill(Color.accentColor.opacity(0.9)).frame(width: 26, height: 26)
-                    Image(systemName: "arrowtriangle.up.fill").font(.system(size: 11)).foregroundStyle(.white)
-                        .offset(y: -1)
+                    ViewCone().fill(LinearGradient(colors: [Color.accentColor.opacity(0.55), .clear],
+                                                   startPoint: .center, endPoint: .top))
+                        .frame(width: 120, height: 120)
+                    Circle().fill(Color.accentColor).frame(width: 22, height: 22)
+                    Capsule().fill(.white).frame(width: 4, height: 11).offset(y: -4)
                 }
                 .rotationEffect(.degrees(Double(model.headAngle)))
+                .animation(.linear(duration: 0.1), value: model.headAngle)
                 .position(center)
+                Text(String(format: "%+.0f°", model.headAngle))
+                    .font(.caption.monospacedDigit()).foregroundStyle(.secondary)
+                    .position(x: center.x, y: center.y + 26)
 
                 ForEach(model.scene.all) { source in
                     SourceDot(source: source,
@@ -74,5 +80,17 @@ private struct SourceDot: View {
                 }
         )
         .help("\(source.name): \(Int(source.angle))° a \(String(format: "%.1f", source.distance)) m")
+    }
+}
+
+/// Cone de visão: aponta para cima e abre 70°.
+private struct ViewCone: Shape {
+    func path(in rect: CGRect) -> Path {
+        var p = Path()
+        let c = CGPoint(x: rect.midX, y: rect.midY)
+        p.move(to: c)
+        p.addArc(center: c, radius: rect.width / 2, startAngle: .degrees(-125), endAngle: .degrees(-55), clockwise: false)
+        p.closeSubpath()
+        return p
     }
 }

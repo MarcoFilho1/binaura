@@ -104,3 +104,9 @@ public func ownProcessObject(registeringOn output: AudioObjectID) -> AudioObject
     AudioDeviceDestroyIOProcID(output, proc!)
     return object
 }
+
+/// Verdadeiro para os alto-falantes embutidos do Mac (qualquer outra saída é tratada como fone).
+public func isBuiltInSpeaker(_ device: AudioObjectID) -> Bool {
+    uint32Property(device, kAudioDevicePropertyTransportType) == kAudioDeviceTransportTypeBuiltIn
+        && stringProperty(device, kAudioObjectPropertyName).localizedCaseInsensitiveContains("speaker")
+}

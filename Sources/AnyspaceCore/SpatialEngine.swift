@@ -109,6 +109,11 @@ public final class SpatialEngine {
         }
     }
 
+    /// Alto-falantes do Mac não têm fones separados por ouvido; o motor usa outro modo de saída para eles.
+    public func setOutputKind(speakers: Bool) {
+        environment.outputType = speakers ? .builtInSpeakers : .headphones
+    }
+
     public func start() throws { try engine.start() }
     public func stop() { engine.stop() }
 }
